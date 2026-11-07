@@ -101,7 +101,6 @@ function checkAndProcessAutomaticIncome() {
   }
 }
 
-// Run automatic earnings check every 10 seconds
 setInterval(() => {
   if (currentUser) {
     checkAndProcessAutomaticIncome();
@@ -197,7 +196,6 @@ function showMainApp(isNewUser) {
   document.getElementById('authContainer').classList.add('hidden');
   document.getElementById('mainApp').classList.remove('hidden');
 
-  // Strict Admin Control Check
   const adminNavContainer = document.getElementById('adminNavContainer');
   if (currentUser && currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
     adminNavContainer.classList.remove('hidden');
@@ -218,30 +216,25 @@ function showMainApp(isNewUser) {
 // NAVIGATION TABS
 // ==========================================
 function switchTab(tabName) {
-  // Hide all tabs
   ['dashboard', 'vip', 'team', 'history'].forEach(t => {
     const content = document.getElementById(`tabContent-${t}`);
     if (content) content.classList.add('hidden');
     
-    // Top Nav buttons
     const topBtn = document.getElementById(`navBtn-${t}`);
     if (topBtn) {
       topBtn.className = 'flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-300 hover:bg-slate-800 transition shrink-0 border border-slate-800';
     }
-    // Bottom Nav buttons
     const botBtn = document.getElementById(`bottomNav-${t}`);
     if (botBtn) {
       botBtn.className = 'flex flex-col items-center text-slate-400 hover:text-white py-1';
     }
   });
 
-  // If admin view is active, close it when clicking user tabs
   if (state.isAdminView) {
     state.isAdminView = false;
     document.getElementById('adminView').classList.add('hidden');
   }
 
-  // Show selected tab
   const activeContent = document.getElementById(`tabContent-${tabName}`);
   if (activeContent) activeContent.classList.remove('hidden');
 
@@ -267,7 +260,6 @@ function render() {
     document.getElementById('userEmailDisplay').textContent = currentUser.email;
   }
 
-  // Daily Checkin Status
   const checkinBtn = document.getElementById('checkinBtn');
   const today = new Date().toDateString();
   if (state.user.lastCheckin === today) {
@@ -276,7 +268,6 @@ function render() {
     checkinBtn.innerText = 'Checked In Today';
   }
 
-  // Active Investments List
   const activeList = document.getElementById('activeInvestmentsList');
   if (state.activeInvestments.length === 0) {
     activeList.innerHTML = `<p class="text-slate-500 italic">No active investment plans yet. Purchase a VIP Fast Charger plan below to start receiving automatic 24-hour income drops.</p>`;
@@ -294,7 +285,6 @@ function render() {
     `).join('');
   }
 
-  // VIP Grid with Charger Images
   const vipGrid = document.getElementById('vipGrid');
   vipGrid.innerHTML = VIP_PACKAGES.map(pkg => {
     const userPurchased = state.user.purchases[pkg.id] || 0;
@@ -337,7 +327,6 @@ function render() {
     `;
   }).join('');
 
-  // Transactions Table
   const userTxTable = document.getElementById('userTxTable');
   userTxTable.innerHTML = state.transactions.map(tx => `
     <tr class="hover:bg-slate-900/50">
@@ -354,7 +343,6 @@ function render() {
     </tr>
   `).join('');
 
-  // Admin View Elements
   if (state.isAdminView && currentUser && currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
     const adminGiftList = document.getElementById('adminGiftCodesList');
     if (adminGiftList) {
@@ -391,6 +379,42 @@ function render() {
       }
     }
   }
+}
+
+// ==========================================
+// ADMIN MANUAL CREDIT FUNCTION
+// ==========================================
+function adminManualCredit() {
+  if (!currentUser || currentUser.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+    alert('Unauthorized access.');
+    return;
+  }
+
+  const targetEmail = document.getElementById('adminCreditEmail').value.trim();
+  const creditAmount = parseFloat(document.getElementById('adminCreditAmount').value);
+
+  if (!targetEmail || !creditAmount || creditAmount <= 0) {
+    alert('Please provide a valid user email and credit amount.');
+    return;
+  }
+
+  // Credit user balance and log transaction
+  state.user.balance += creditAmount;
+  state.transactions.unshift({
+    id: 'tx_manual_' + Date.now(),
+    user: targetEmail,
+    type: 'Admin Manual Credit',
+    amount: creditAmount,
+    fee: 0,
+    status: 'Completed',
+    date: new Date().toISOString()
+  });
+
+  saveLocalState();
+  document.getElementById('adminCreditEmail').value = '';
+  document.getElementById('adminCreditAmount').value = '';
+  render();
+  alert(`Successfully credited ₦${creditAmount.toLocaleString()} to ${targetEmail}!`);
 }
 
 // ==========================================
@@ -573,7 +597,6 @@ function copyAccountDetails() {
 }
 
 function openWithdrawModal() {
-  // Restriction: User cannot place withdrawal until they hold an investment plan
   if (!state.activeInvestments || state.activeInvestments.length === 0) {
     alert('Withdrawal Locked: You must purchase at least one VIP investment plan before you can make a withdrawal.');
     return;
@@ -657,7 +680,6 @@ function toggleAdminView() {
   const adminView = document.getElementById('adminView');
   const toggleBtn = document.getElementById('toggleAdminBtn');
 
-  // Hide all user tab contents when admin view is toggled on
   ['dashboard', 'vip', 'team', 'history'].forEach(t => {
     document.getElementById(`tabContent-${t}`).classList.add('hidden');
   });
