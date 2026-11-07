@@ -32,7 +32,7 @@
     }
   </script>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen font-sans">
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans pb-24">
 
   <!-- ================= AUTH CONTAINER (LOGIN / REGISTER) ================= -->
   <div id="authContainer" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
@@ -41,7 +41,7 @@
       <div class="text-center space-y-2">
         <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-green-400 flex items-center justify-center text-slate-950 font-black text-3xl shadow-lg shadow-emerald-500/20 mx-auto">⚡</div>
         <h1 class="text-2xl font-black tracking-tight text-white">SHIPLUS</h1>
-        <p class="text-xs text-slate-400">Join Shiplus & Get ₦1,000 Sign-Up Bonus</p>
+        <p class="text-xs text-slate-400">Join Shiplus Fast Charging & Get ₦1,000 Sign-Up Bonus</p>
       </div>
 
       <!-- AUTH FORM TOGGLE TABS -->
@@ -88,7 +88,7 @@
   </div>
 
 
-  <!-- ================= MAIN APP (HIDDEN UNTIL AUTHENTICATED) ================= -->
+  <!-- ================= MAIN APP (AUTHENTICATED) ================= -->
   <div id="mainApp" class="hidden">
     
     <!-- TOP BAR -->
@@ -99,21 +99,41 @@
           <span class="font-extrabold text-lg tracking-tight text-white">SHIPLUS</span>
         </div>
         <div class="flex items-center gap-2">
-          <button id="toggleAdminBtn" onclick="toggleAdminView()" class="text-xs bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg font-medium transition">
-            Admin View
-          </button>
-          <button onclick="handleLogout()" class="text-xs bg-rose-600 hover:bg-rose-500 text-white font-semibold px-3 py-1.5 rounded-lg shadow-md transition">
+          <div id="adminNavContainer" class="hidden">
+            <button onclick="toggleAdminView()" id="toggleAdminBtn" class="text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/40 px-3 py-1.5 rounded-lg font-bold transition">
+              Admin Console
+            </button>
+          </div>
+          <button onclick="handleLogout()" class="text-xs bg-rose-600/20 text-rose-400 border border-rose-500/30 hover:bg-rose-600 hover:text-white font-semibold px-3 py-1.5 rounded-lg transition">
             Logout
           </button>
         </div>
       </div>
     </header>
 
-    <!-- MAIN DASHBOARD CONTENT -->
-    <main class="max-w-4xl mx-auto px-4 py-6 space-y-6 pb-20">
+    <!-- NAVIGATION DESIGN (TABS) -->
+    <nav class="sticky top-14 z-20 bg-slate-950/80 backdrop-blur border-b border-slate-800 px-4 py-2">
+      <div class="max-w-4xl mx-auto flex gap-2 overflow-x-auto no-scrollbar">
+        <button onclick="switchTab('dashboard')" id="navBtn-dashboard" class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white transition shrink-0 shadow">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+        </button>
+        <button onclick="switchTab('vip')" id="navBtn-vip" class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-300 hover:bg-slate-800 transition shrink-0 border border-slate-800">
+          <i data-lucide="zap" class="w-4 h-4"></i> VIP Plans
+        </button>
+        <button onclick="switchTab('team')" id="navBtn-team" class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-300 hover:bg-slate-800 transition shrink-0 border border-slate-800">
+          <i data-lucide="users" class="w-4 h-4"></i> Team & Referral
+        </button>
+        <button onclick="switchTab('history')" id="navBtn-history" class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-300 hover:bg-slate-800 transition shrink-0 border border-slate-800">
+          <i data-lucide="history" class="w-4 h-4"></i> Transactions
+        </button>
+      </div>
+    </nav>
 
-      <!-- USER DASHBOARD VIEW -->
-      <div id="userView" class="space-y-6">
+    <!-- MAIN DASHBOARD CONTENT -->
+    <main class="max-w-4xl mx-auto px-4 py-6 space-y-6 pb-24">
+
+      <!-- ================= TAB: USER DASHBOARD ================= -->
+      <div id="tabContent-dashboard" class="space-y-6">
 
         <!-- ACCOUNT BALANCE CARD -->
         <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-950 via-slate-900 to-slate-900 border border-emerald-800/50 p-6 shadow-xl">
@@ -121,7 +141,7 @@
             <div>
               <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Total Account Balance</span>
               <div class="text-3xl md:text-4xl font-black text-white mt-1" id="userBalance">₦1,000.00</div>
-              <p class="text-xs text-slate-400 mt-1">Welcome Bonus: <span class="text-emerald-400 font-semibold">₦1,000</span> Active</p>
+              <p class="text-xs text-slate-400 mt-1">Logged in as: <span id="userEmailDisplay" class="text-slate-200 font-medium">user</span></p>
             </div>
             <button onclick="claimDailyCheckin()" id="checkinBtn" class="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-slate-950 font-extrabold px-5 py-3 rounded-xl shadow-lg shadow-emerald-500/20 transition flex items-center justify-center gap-2">
               <i data-lucide="calendar-check" class="w-5 h-5"></i>
@@ -143,15 +163,13 @@
           </div>
         </section>
 
-        <!-- ACTIVE INVESTMENTS SUMMARY -->
+        <!-- ACTIVE INVESTMENTS SUMMARY (AUTOMATIC DAILY INCOME) -->
         <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
           <div class="flex justify-between items-center mb-3">
             <h3 class="text-sm font-bold text-white flex items-center gap-2">
-              <i data-lucide="clock" class="w-4 h-4 text-emerald-400"></i> Active Investments & 24H Earnings
+              <i data-lucide="clock" class="w-4 h-4 text-emerald-400"></i> Active Investments & Automatic 24H Earnings
             </h3>
-            <button onclick="claimAllDailyIncomes()" class="text-xs bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-600 hover:text-white px-3 py-1 rounded-lg font-semibold transition">
-              Collect Due Income
-            </button>
+            <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-bold border border-emerald-500/30">Auto-Dropping</span>
           </div>
           <div id="activeInvestmentsList" class="space-y-2 text-xs"></div>
         </section>
@@ -165,7 +183,7 @@
             <span class="text-xs font-bold text-slate-200">Deposit</span>
           </button>
 
-          <button onclick="openModal('withdrawModal')" class="flex flex-col items-center justify-center p-4 bg-slate-900 hover:bg-slate-800/80 border border-emerald-900/30 rounded-xl transition shadow-md group">
+          <button onclick="openWithdrawModal()" class="flex flex-col items-center justify-center p-4 bg-slate-900 hover:bg-slate-800/80 border border-emerald-900/30 rounded-xl transition shadow-md group">
             <div class="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-2 group-hover:scale-110 transition">
               <i data-lucide="arrow-up-right" class="w-6 h-6"></i>
             </div>
@@ -187,18 +205,21 @@
           </a>
         </div>
 
-        <!-- VIP INVESTMENT PACKAGES -->
-        <section>
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold text-white flex items-center gap-2">
-              <i data-lucide="zap" class="w-5 h-5 text-emerald-400"></i> VIP Investment Plans
-            </h2>
-            <span class="text-xs text-slate-400">40-Day Duration</span>
-          </div>
-          <div id="vipGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-        </section>
+      </div>
 
-        <!-- REFERRAL & TEAM SECTION -->
+      <!-- ================= TAB: VIP INVESTMENT PLANS ================= -->
+      <div id="tabContent-vip" class="hidden space-y-6">
+        <div class="flex justify-between items-center mb-2">
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <i data-lucide="zap" class="w-5 h-5 text-emerald-400"></i> VIP Fast Charger Investment Plans
+          </h2>
+          <span class="text-xs text-slate-400">40-Day Duration</span>
+        </div>
+        <div id="vipGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </div>
+
+      <!-- ================= TAB: TEAM & REFERRALS ================= -->
+      <div id="tabContent-team" class="hidden space-y-6">
         <section class="bg-slate-900 border border-emerald-900/30 rounded-2xl p-5 shadow-lg space-y-4">
           <h3 class="text-lg font-bold text-white flex items-center gap-2">
             <i data-lucide="share-2" class="w-5 h-5 text-emerald-400"></i> Referral & Team Program
@@ -228,8 +249,10 @@
             </div>
           </div>
         </section>
+      </div>
 
-        <!-- TRANSACTION HISTORY -->
+      <!-- ================= TAB: TRANSACTIONS HISTORY ================= -->
+      <div id="tabContent-history" class="hidden space-y-6">
         <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
           <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
             <i data-lucide="history" class="w-5 h-5 text-emerald-400"></i> Transaction History
@@ -248,17 +271,16 @@
             </table>
           </div>
         </section>
-
       </div>
 
-      <!-- ADMIN DASHBOARD VIEW (HIDDEN BY DEFAULT) -->
+      <!-- ================= ADMIN DASHBOARD VIEW (STRICTLY OMOOPEOLA1@GMAIL.COM) ================= -->
       <div id="adminView" class="hidden space-y-6">
         <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-center justify-between">
           <div>
-            <h2 class="text-lg font-bold text-amber-400">Shiplus Management Console</h2>
-            <p class="text-xs text-slate-300">Manage deposits, withdrawals, and create daily gift codes.</p>
+            <h2 class="text-lg font-bold text-amber-400">Shiplus Admin Console</h2>
+            <p class="text-xs text-slate-300">Authorized Admin: omoopeola1@gmail.com</p>
           </div>
-          <span class="bg-amber-500 text-slate-950 text-xs font-black px-2.5 py-1 rounded">ADMIN MODE</span>
+          <span class="bg-amber-500 text-slate-950 text-xs font-black px-2.5 py-1 rounded">SECURE ADMIN</span>
         </div>
 
         <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
@@ -309,9 +331,32 @@
       </div>
 
     </main>
+
+    <!-- BOTTOM NAVIGATION BAR -->
+    <div class="fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur border-t border-slate-800 px-4 py-2">
+      <div class="max-w-md mx-auto grid grid-cols-4 text-center">
+        <button onclick="switchTab('dashboard')" id="bottomNav-dashboard" class="flex flex-col items-center text-emerald-400 py-1">
+          <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+          <span class="text-[10px] font-bold mt-0.5">Home</span>
+        </button>
+        <button onclick="switchTab('vip')" id="bottomNav-vip" class="flex flex-col items-center text-slate-400 hover:text-white py-1">
+          <i data-lucide="zap" class="w-5 h-5"></i>
+          <span class="text-[10px] font-bold mt-0.5">VIP Plans</span>
+        </button>
+        <button onclick="switchTab('team')" id="bottomNav-team" class="flex flex-col items-center text-slate-400 hover:text-white py-1">
+          <i data-lucide="users" class="w-5 h-5"></i>
+          <span class="text-[10px] font-bold mt-0.5">Team</span>
+        </button>
+        <button onclick="switchTab('history')" id="bottomNav-history" class="flex flex-col items-center text-slate-400 hover:text-white py-1">
+          <i data-lucide="history" class="w-5 h-5"></i>
+          <span class="text-[10px] font-bold mt-0.5">History</span>
+        </button>
+      </div>
+    </div>
+
   </div>
 
-  <!-- WELCOME POPUP MODAL (SHOWS ONLY AFTER USER LOGS IN) -->
+  <!-- WELCOME POPUP MODAL -->
   <div id="welcomeModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-emerald-500/40 rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl relative">
       <div class="w-16 h-16 bg-gradient-to-tr from-emerald-500 to-green-400 text-slate-950 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/30 text-2xl font-black">
@@ -379,6 +424,7 @@
       <div class="text-xs bg-emerald-950/50 border border-emerald-800/40 p-3 rounded-xl space-y-1 text-slate-300">
         <p>• Window: <strong>9:00 AM – 5:00 PM (WAT)</strong></p>
         <p>• Fee: <strong>15%</strong> | Limits: <strong>₦1,000 – ₦50,000</strong></p>
+        <p class="text-emerald-400 font-semibold">• Requires at least 1 active investment plan.</p>
       </div>
       <div>
         <label class="block text-xs text-slate-400 mb-1">Amount to Withdraw (₦)</label>
