@@ -38,10 +38,10 @@ let state = {
     lastCheckin: null,
     purchases: {},
     redeemedCodes: [],
-    inviter: null,     // Upline email (Level 1)
-    bankAccount: null  // { bankName, accountNo, accountName }
+    inviter: null,     
+    bankAccount: null  
   },
-  allUsersNetwork: {}, // Stores inviter links for multi-level tracking: { userEmail: inviterEmail }
+  allUsersNetwork: {}, 
   transactions: [],
   activeInvestments: [],
   giftCodes: [],
@@ -138,7 +138,12 @@ async function handleRegister(e) {
   const fullName = document.getElementById('regFullName').value.trim();
   const email = document.getElementById('regEmail').value.trim();
   const password = document.getElementById('regPassword').value;
-  const inviterRef = document.getElementById('regRefCode').value.trim().toLowerCase();
+  
+  // Get referral code from input field or fallback to URL parameter
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlRef = urlParams.get('ref');
+  const inputRef = document.getElementById('regRefCode').value.trim().toLowerCase();
+  const inviterRef = inputRef || (urlRef ? urlRef.toLowerCase() : null);
 
   if (supabaseClient) {
     const { data, error } = await supabaseClient.auth.signUp({
@@ -268,7 +273,11 @@ function render() {
   document.getElementById('userBalance').textContent = `₦${state.user.balance.toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
   if (currentUser) {
     document.getElementById('userEmailDisplay').textContent = currentUser.email;
-    document.getElementById('refLink').textContent = `https://shiplus.com/register?ref=${currentUser.email}`;
+    
+    // Generate dynamic referral link using current domain (works on localhost & Render automatically)
+    const currentBaseUrl = window.location.origin + window.location.pathname;
+    const dynamicRefLink = `${currentBaseUrl}?ref=${currentUser.email}`;
+    document.getElementById('refLink').textContent = dynamicRefLink;
   }
 
   if (state.user.bankAccount) {
@@ -433,7 +442,6 @@ function distributeMultiLevelReferralBonus(purchaseAmount) {
     if (!currentInviter) return;
     const bonus = purchaseAmount * pct;
 
-    // If inviter is current active user on this device session, credit instantly
     if (currentUser && currentUser.email.toLowerCase() === currentInviter.toLowerCase()) {
       state.user.balance += bonus;
       state.transactions.unshift({
@@ -447,7 +455,6 @@ function distributeMultiLevelReferralBonus(purchaseAmount) {
       });
     }
 
-    // Traverse up network tree for next level
     currentInviter = state.allUsersNetwork ? state.allUsersNetwork[currentInviter.toLowerCase()] : null;
   });
 }
@@ -629,7 +636,6 @@ function buyVipPackage(pkgId) {
     date: new Date(now).toISOString()
   });
 
-  // Trigger Multi-Level Referral Commission Payout
   distributeMultiLevelReferralBonus(pkg.price);
 
   saveLocalState();
@@ -786,6 +792,16 @@ function copyReferralLink() {
 document.addEventListener('DOMContentLoaded', () => {
   loadLocalState();
   
+  // Automatically grab referral parameter if someone visits via ?ref=email
+  const urlParams = new URLSearchParams(window.location.search);
+  const refParam = urlParams.get('ref');
+  if (refParam && !currentUser) {
+    const refInput = document.getElementById('regRefCode');
+    if (refInput) {
+      refInput.value = refParam;
+    }
+  }
+
   if (currentUser) {
     showMainApp(false);
   } else {
