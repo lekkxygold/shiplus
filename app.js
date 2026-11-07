@@ -145,11 +145,14 @@ let state = {
     id: 'usr_101',
     balance: 1000,
     lastCheckin: null,
-    purchases: {}
+    purchases: {},
+    redeemedCodes: []
   },
   transactions: [
     { id: 'tx_0', user: 'usr_101', type: 'Bonus', amount: 1000, fee: 0, status: 'Completed', date: new Date().toISOString() }
   ],
+  activeInvestments: [],
+  giftCodes: [],
   isAdminView: false
 };
 
@@ -157,6 +160,9 @@ function loadLocalState() {
   const saved = localStorage.getItem('shiplus_state');
   if (saved) {
     try { state = JSON.parse(saved); } catch(e) {}
+    if (!state.user.redeemedCodes) state.user.redeemedCodes = [];
+    if (!state.activeInvestments) state.activeInvestments = [];
+    if (!state.giftCodes) state.giftCodes = [];
   }
 }
 
@@ -180,7 +186,25 @@ function render() {
     checkinBtn.innerText = 'Checked In Today';
   }
 
-  // Render VIP Grid with Charger Images
+  // Render Active Investments List
+  const activeList = document.getElementById('activeInvestmentsList');
+  if (state.activeInvestments.length === 0) {
+    activeList.innerHTML = `<p class="text-slate-500 italic">No active investment plans yet. Purchase a VIP plan below to start earning daily income.</p>`;
+  } else {
+    activeList.innerHTML = state.activeInvestments.map(inv => `
+      <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
+        <div>
+          <div class="font-bold text-white">${inv.pkgName}</div>
+          <div class="text-[10px] text-emerald-400">Daily: ₦${inv.dailyIncome.toLocaleString()} | Claimed: ${inv.daysClaimed}/${inv.daysTotal} Days</div>
+        </div>
+        <div class="text-right text-[10px] text-slate-400">
+          Purchased: ${new Date(inv.purchasedAt).toLocaleDateString()}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Render VIP Grid
   const vipGrid = document.getElementById('vipGrid');
   vipGrid.innerHTML = VIP_PACKAGES.map(pkg => {
     const userPurchased = state.user.purchases[pkg.id] || 0;
@@ -240,7 +264,20 @@ function render() {
     </tr>
   `).join('');
 
-  // Admin View Table
+  // Admin View: Gift Codes List
+  const adminGiftList = document.getElementById('adminGiftCodesList');
+  if (state.giftCodes.length === 0) {
+    adminGiftList.innerHTML = `<p class="text-slate-500 italic">No gift codes created yet.</p>`;
+  } else {
+    adminGiftList.innerHTML = state.giftCodes.map(g => `
+      <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between items-center text-[11px]">
+        <div><strong class="text-emerald-400">${g.code}</strong> - ₦${g.amount}</div>
+        <div class="text-slate-400">Remaining Qty: ${g.remainingQty}/${g.totalQty}</div>
+      </div>
+    `).join('');
+  }
+
+  // Admin View: Pending Transactions Table
   const adminTxTable = document.getElementById('adminTxTable');
   const pendingTx = state.transactions.filter(t => t.status === 'Pending');
   
@@ -263,8 +300,9 @@ function render() {
 }
 
 // ==========================================
-// ACTIONS
+// ACTIONS & LOGIC
 // ==========================================
+
 function claimDailyCheckin() {
   const today = new Date().toDateString();
   if (state.user.lastCheckin === today) {
@@ -289,6 +327,83 @@ function claimDailyCheckin() {
   alert('Success! ₦50 daily check-in bonus added to your balance.');
 }
 
+// Gift Code: Admin Create
+function createGiftCode() {
+  const code = document.getElementById('adminCodeName').value.trim().toUpperCase();
+  const amount = parseFloat(document.getElementById('adminCodeAmount').value);
+  const qty = parseInt(document.getElementById('adminCodeQty').value, 10);
+
+  if (!code || !amount || !qty || amount <= 0 || qty <= 0) {
+    alert('Please enter valid Code Name, Amount, and Quantity.');
+    return;
+  }
+
+  if (state.giftCodes.find(g => g.code === code)) {
+    alert('A gift code with this name already exists.');
+    return;
+  }
+
+  state.giftCodes.push({
+    code: code,
+    amount: amount,
+    totalQty: qty,
+    remainingQty: qty,
+    createdAt: new Date().toISOString()
+  });
+
+  saveLocalState();
+  document.getElementById('adminCodeName').value = '';
+  document.getElementById('adminCodeAmount').value = '';
+  document.getElementById('adminCodeQty').value = '';
+  render();
+  alert(`Gift code ${code} for ₦${amount} (Qty: ${qty}) created successfully!`);
+}
+
+// Gift Code: User Redeem
+function redeemGiftCode() {
+  const inputCode = document.getElementById('giftCodeInput').value.trim().toUpperCase();
+  if (!inputCode) {
+    alert('Please enter a gift code.');
+    return;
+  }
+
+  const giftObj = state.giftCodes.find(g => g.code === inputCode);
+  if (!giftObj) {
+    alert('Invalid gift code.');
+    return;
+  }
+
+  if (giftObj.remainingQty <= 0) {
+    alert('This gift code has reached its maximum redemptions.');
+    return;
+  }
+
+  if (state.user.redeemedCodes.includes(inputCode)) {
+    alert('You have already redeemed this gift code.');
+    return;
+  }
+
+  giftObj.remainingQty -= 1;
+  state.user.redeemedCodes.push(inputCode);
+  state.user.balance += giftObj.amount;
+
+  state.transactions.unshift({
+    id: 'tx_' + Date.now(),
+    user: state.user.id,
+    type: `Gift Code (${inputCode})`,
+    amount: giftObj.amount,
+    fee: 0,
+    status: 'Completed',
+    date: new Date().toISOString()
+  });
+
+  saveLocalState();
+  document.getElementById('giftCodeInput').value = '';
+  render();
+  alert(`Success! ₦${giftObj.amount.toLocaleString()} added to your account.`);
+}
+
+// Buy VIP Package with 24-Hour Timer Setup
 function buyVipPackage(pkgId) {
   const pkg = VIP_PACKAGES.find(p => p.id === pkgId);
   const currentCount = state.user.purchases[pkgId] || 0;
@@ -305,19 +420,74 @@ function buyVipPackage(pkgId) {
 
   state.user.balance -= pkg.price;
   state.user.purchases[pkgId] = currentCount + 1;
+
+  const now = Date.now();
+  state.activeInvestments.push({
+    id: 'inv_' + now,
+    pkgId: pkg.id,
+    pkgName: pkg.name,
+    dailyIncome: pkg.daily,
+    daysTotal: pkg.days,
+    daysClaimed: 0,
+    lastClaimTimestamp: now,
+    purchasedAt: new Date(now).toISOString()
+  });
+
   state.transactions.unshift({
-    id: 'tx_' + Date.now(),
+    id: 'tx_' + now,
     user: state.user.id,
     type: `Invest: ${pkg.name}`,
     amount: pkg.price,
     fee: 0,
     status: 'Completed',
-    date: new Date().toISOString()
+    date: new Date(now).toISOString()
   });
 
   saveLocalState();
   render();
-  alert(`Congratulations! You have successfully purchased ${pkg.name}.`);
+  alert(`Congratulations! You have successfully purchased ${pkg.name}. Daily returns will drop every 24 hours for ${pkg.days} days.`);
+}
+
+// Claim Due 24-Hour Income
+function claimAllDailyIncomes() {
+  const now = Date.now();
+  const DAY_IN_MS = 24 * 60 * 60 * 1000;
+  let totalClaimed = 0;
+
+  state.activeInvestments.forEach(inv => {
+    if (inv.daysClaimed < inv.daysTotal) {
+      const elapsedMs = now - inv.lastClaimTimestamp;
+      const dueDays = Math.floor(elapsedMs / DAY_IN_MS);
+
+      if (dueDays > 0) {
+        const playableDays = Math.min(dueDays, inv.daysTotal - inv.daysClaimed);
+        const incomeAmount = playableDays * inv.dailyIncome;
+        
+        inv.daysClaimed += playableDays;
+        inv.lastClaimTimestamp += (playableDays * DAY_IN_MS);
+        totalClaimed += incomeAmount;
+      }
+    }
+  });
+
+  if (totalClaimed > 0) {
+    state.user.balance += totalClaimed;
+    state.transactions.unshift({
+      id: 'tx_' + now,
+      user: state.user.id,
+      type: '24H Investment Returns',
+      amount: totalClaimed,
+      fee: 0,
+      status: 'Completed',
+      date: new Date(now).toISOString()
+    });
+
+    saveLocalState();
+    render();
+    alert(`Success! Harvested ₦${totalClaimed.toLocaleString()} in 24-hour investment returns.`);
+  } else {
+    alert('No investment earnings are due yet. Income drops every 24 hours from purchase time.');
+  }
 }
 
 function submitDeposit() {
@@ -341,7 +511,7 @@ function submitDeposit() {
   closeModal('depositModal');
   document.getElementById('depositAmount').value = '';
   render();
-  alert('Deposit request submitted! Awaiting admin confirmation after payment transfer.');
+  alert('Deposit request submitted! Awaiting admin confirmation.');
 }
 
 function copyAccountDetails() {
