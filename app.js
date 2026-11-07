@@ -3,10 +3,10 @@
 // ==========================================
 const SUPABASE_URL = 'https://mhmvygubhzgmwovhzbdn.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_PeRJyArsWXjzro5thtOiVA_18BvrLBZ';
-let supabase = null;
+let supabaseClient = null;
 
 try {
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 } catch (err) {
   console.warn('Supabase initialization fallback to local storage mode.');
 }
@@ -88,8 +88,8 @@ async function handleRegister(e) {
   const email = document.getElementById('regEmail').value.trim();
   const password = document.getElementById('regPassword').value;
 
-  if (supabase) {
-    const { data, error } = await supabase.auth.signUp({
+  if (supabaseClient) {
+    const { data, error } = await supabaseClient.auth.signUp({
       email,
       password,
       options: { data: { full_name: fullName } }
@@ -118,7 +118,7 @@ async function handleRegister(e) {
     saveLocalState();
   }
 
-  showMainApp(true); // True to display welcome modal on first registration
+  showMainApp(true); // Display welcome popup modal on registration
 }
 
 async function handleLogin(e) {
@@ -126,8 +126,8 @@ async function handleLogin(e) {
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
 
-  if (supabase) {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (supabaseClient) {
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
     if (error) {
       alert('Login error: ' + error.message);
       return;
