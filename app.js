@@ -12,134 +12,25 @@ try {
 }
 
 // ==========================================
-// VIP PACKAGES DATA (WITH CHARGER IMAGES)
+// VIP PACKAGES DATA
 // ==========================================
 const VIP_PACKAGES = [
-  { 
-    id: 1, 
-    name: 'Shiplus VIP-1', 
-    price: 3800, 
-    daily: 800, 
-    days: 40, 
-    total: 32000, 
-    commission: 875, 
-    limit: 1, 
-    doubleIncome: 800,
-    image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=400&q=80'
-  },
-  { 
-    id: 2, 
-    name: 'Shiplus VIP-2', 
-    price: 7500, 
-    daily: 1350, 
-    days: 40, 
-    total: 54000, 
-    commission: 1875, 
-    limit: 1, 
-    doubleIncome: 3200,
-    image: 'https://images.unsplash.com/photo-1609592424089-9fa91e2b4f62?auto=format&fit=crop&w=400&q=80'
-  },
-  { 
-    id: 3, 
-    name: 'Shiplus VIP-3', 
-    price: 17500, 
-    daily: 3200, 
-    days: 40, 
-    total: 128000, 
-    commission: 4375, 
-    limit: 3, 
-    doubleIncome: 7125,
-    image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=400&q=80'
-  },
-  { 
-    id: 4, 
-    name: 'Shiplus VIP-4', 
-    price: 37500, 
-    daily: 7125, 
-    days: 40, 
-    total: 285000, 
-    commission: 9375, 
-    limit: 3, 
-    doubleIncome: 15000,
-    image: 'https://images.unsplash.com/photo-1585338107529-13afc5f02586?auto=format&fit=crop&w=400&q=80'
-  },
-  { 
-    id: 5, 
-    name: 'Shiplus VIP-5', 
-    price: 75000, 
-    daily: 15000, 
-    days: 40, 
-    total: 600000, 
-    commission: 18750, 
-    limit: 3, 
-    doubleIncome: 31500,
-    image: 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?auto=format&fit=crop&w=400&q=80'
-  },
-  { 
-    id: 6, 
-    name: 'Shiplus VIP-6', 
-    price: 150000, 
-    daily: 31500, 
-    days: 40, 
-    total: 1260000, 
-    commission: 37500, 
-    limit: 3, 
-    doubleIncome: 77000,
-    image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=400&q=80'
-  },
-  { 
-    id: 7, 
-    name: 'Shiplus VIP-7', 
-    price: 350000, 
-    daily: 70000, 
-    days: 40, 
-    total: 2800000, 
-    commission: 87500, 
-    limit: 3, 
-    doubleIncome: 126000,
-    image: 'https://images.unsplash.com/photo-1609592424089-9fa91e2b4f62?auto=format&fit=crop&w=400&q=80'
-  },
-  { 
-    id: 8, 
-    name: 'Shiplus VIP-8', 
-    price: 550000, 
-    daily: 126000, 
-    days: 40, 
-    total: 5040000, 
-    commission: 137500, 
-    limit: 3, 
-    doubleIncome: 180000,
-    image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=400&q=80'
-  },
-  { 
-    id: 9, 
-    name: 'Shiplus VIP-9', 
-    price: 750000, 
-    daily: 180000, 
-    days: 40, 
-    total: 7200000, 
-    commission: 187500, 
-    limit: 3, 
-    doubleIncome: 237500,
-    image: 'https://images.unsplash.com/photo-1585338107529-13afc5f02586?auto=format&fit=crop&w=400&q=80'
-  },
-  { 
-    id: 10, 
-    name: 'Shiplus VIP-10', 
-    price: 950000, 
-    daily: 237500, 
-    days: 40, 
-    total: 9500000, 
-    commission: 237500, 
-    limit: 3, 
-    doubleIncome: 390000,
-    image: 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?auto=format&fit=crop&w=400&q=80'
-  }
+  { id: 1, name: 'Shiplus VIP-1', price: 3800, daily: 800, days: 40, total: 32000, commission: 875, limit: 1, image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=400&q=80' },
+  { id: 2, name: 'Shiplus VIP-2', price: 7500, daily: 1350, days: 40, total: 54000, commission: 1875, limit: 1, image: 'https://images.unsplash.com/photo-1609592424089-9fa91e2b4f62?auto=format&fit=crop&w=400&q=80' },
+  { id: 3, name: 'Shiplus VIP-3', price: 17500, daily: 3200, days: 40, total: 128000, commission: 4375, limit: 3, image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=400&q=80' },
+  { id: 4, name: 'Shiplus VIP-4', price: 37500, daily: 7125, days: 40, total: 285000, commission: 9375, limit: 3, image: 'https://images.unsplash.com/photo-1585338107529-13afc5f02586?auto=format&fit=crop&w=400&q=80' },
+  { id: 5, name: 'Shiplus VIP-5', price: 75000, daily: 15000, days: 40, total: 600000, commission: 18750, limit: 3, image: 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?auto=format&fit=crop&w=400&q=80' },
+  { id: 6, name: 'Shiplus VIP-6', price: 150000, daily: 31500, days: 40, total: 1260000, commission: 37500, limit: 3, image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=400&q=80' },
+  { id: 7, name: 'Shiplus VIP-7', price: 350000, daily: 70000, days: 40, total: 2800000, commission: 87500, limit: 3, image: 'https://images.unsplash.com/photo-1609592424089-9fa91e2b4f62?auto=format&fit=crop&w=400&q=80' },
+  { id: 8, name: 'Shiplus VIP-8', price: 550000, daily: 126000, days: 40, total: 5040000, commission: 137500, limit: 3, image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=400&q=80' },
+  { id: 9, name: 'Shiplus VIP-9', price: 750000, daily: 180000, days: 40, total: 7200000, commission: 187500, limit: 3, image: 'https://images.unsplash.com/photo-1585338107529-13afc5f02586?auto=format&fit=crop&w=400&q=80' },
+  { id: 10, name: 'Shiplus VIP-10', price: 950000, daily: 237500, days: 40, total: 9500000, commission: 237500, limit: 3, image: 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?auto=format&fit=crop&w=400&q=80' }
 ];
 
 // ==========================================
 // APPLICATION STATE
 // ==========================================
+let currentUser = null;
 let state = {
   user: {
     id: 'usr_101',
@@ -148,9 +39,7 @@ let state = {
     purchases: {},
     redeemedCodes: []
   },
-  transactions: [
-    { id: 'tx_0', user: 'usr_101', type: 'Bonus', amount: 1000, fee: 0, status: 'Completed', date: new Date().toISOString() }
-  ],
+  transactions: [],
   activeInvestments: [],
   giftCodes: [],
   isAdminView: false
@@ -160,9 +49,10 @@ function loadLocalState() {
   const saved = localStorage.getItem('shiplus_state');
   if (saved) {
     try { state = JSON.parse(saved); } catch(e) {}
-    if (!state.user.redeemedCodes) state.user.redeemedCodes = [];
-    if (!state.activeInvestments) state.activeInvestments = [];
-    if (!state.giftCodes) state.giftCodes = [];
+  }
+  const savedSession = localStorage.getItem('shiplus_session');
+  if (savedSession) {
+    currentUser = JSON.parse(savedSession);
   }
 }
 
@@ -171,10 +61,106 @@ function saveLocalState() {
 }
 
 // ==========================================
+// AUTHENTICATION LOGIC
+// ==========================================
+function switchAuthTab(tab) {
+  const regForm = document.getElementById('registerForm');
+  const loginForm = document.getElementById('loginForm');
+  const tabRegBtn = document.getElementById('tabRegisterBtn');
+  const tabLoginBtn = document.getElementById('tabLoginBtn');
+
+  if (tab === 'register') {
+    regForm.classList.remove('hidden');
+    loginForm.classList.add('hidden');
+    tabRegBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition bg-emerald-600 text-white';
+    tabLoginBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition text-slate-400 hover:text-white';
+  } else {
+    regForm.classList.add('hidden');
+    loginForm.classList.remove('hidden');
+    tabRegBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition text-slate-400 hover:text-white';
+    tabLoginBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition bg-emerald-600 text-white';
+  }
+}
+
+async function handleRegister(e) {
+  e.preventDefault();
+  const fullName = document.getElementById('regFullName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+
+  if (supabase) {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: fullName } }
+    });
+    if (error) {
+      alert('Sign up error: ' + error.message);
+      return;
+    }
+  }
+
+  // Set session & welcome user
+  currentUser = { email, fullName };
+  localStorage.setItem('shiplus_session', JSON.stringify(currentUser));
+  
+  // Ensure bonus transaction exists
+  if (state.transactions.length === 0) {
+    state.transactions.unshift({
+      id: 'tx_bonus',
+      user: email,
+      type: 'Welcome Bonus',
+      amount: 1000,
+      fee: 0,
+      status: 'Completed',
+      date: new Date().toISOString()
+    });
+    saveLocalState();
+  }
+
+  showMainApp(true); // True to display welcome modal on first registration
+}
+
+async function handleLogin(e) {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+
+  if (supabase) {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      alert('Login error: ' + error.message);
+      return;
+    }
+  }
+
+  currentUser = { email, fullName: email.split('@')[0] };
+  localStorage.setItem('shiplus_session', JSON.stringify(currentUser));
+  showMainApp(false);
+}
+
+function handleLogout() {
+  currentUser = null;
+  localStorage.removeItem('shiplus_session');
+  document.getElementById('mainApp').classList.add('hidden');
+  document.getElementById('authContainer').classList.remove('hidden');
+}
+
+function showMainApp(isNewUser) {
+  document.getElementById('authContainer').classList.add('hidden');
+  document.getElementById('mainApp').classList.remove('hidden');
+  render();
+
+  if (isNewUser) {
+    openModal('welcomeModal');
+  }
+}
+
+// ==========================================
 // RENDER FUNCTIONS
 // ==========================================
 function render() {
-  // Balance
+  // Account Balance
   document.getElementById('userBalance').textContent = `₦${state.user.balance.toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
 
   // Daily Checkin Status
@@ -186,10 +172,10 @@ function render() {
     checkinBtn.innerText = 'Checked In Today';
   }
 
-  // Render Active Investments List
+  // Active Investments List
   const activeList = document.getElementById('activeInvestmentsList');
   if (state.activeInvestments.length === 0) {
-    activeList.innerHTML = `<p class="text-slate-500 italic">No active investment plans yet. Purchase a VIP plan below to start earning daily income.</p>`;
+    activeList.innerHTML = `<p class="text-slate-500 italic">No active investment plans yet. Purchase a VIP plan below to start earning daily returns.</p>`;
   } else {
     activeList.innerHTML = state.activeInvestments.map(inv => `
       <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
@@ -204,7 +190,7 @@ function render() {
     `).join('');
   }
 
-  // Render VIP Grid
+  // VIP Grid
   const vipGrid = document.getElementById('vipGrid');
   vipGrid.innerHTML = VIP_PACKAGES.map(pkg => {
     const userPurchased = state.user.purchases[pkg.id] || 0;
@@ -264,45 +250,46 @@ function render() {
     </tr>
   `).join('');
 
-  // Admin View: Gift Codes List
+  // Admin View Elements
   const adminGiftList = document.getElementById('adminGiftCodesList');
-  if (state.giftCodes.length === 0) {
-    adminGiftList.innerHTML = `<p class="text-slate-500 italic">No gift codes created yet.</p>`;
-  } else {
-    adminGiftList.innerHTML = state.giftCodes.map(g => `
-      <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between items-center text-[11px]">
-        <div><strong class="text-emerald-400">${g.code}</strong> - ₦${g.amount}</div>
-        <div class="text-slate-400">Remaining Qty: ${g.remainingQty}/${g.totalQty}</div>
-      </div>
-    `).join('');
+  if (adminGiftList) {
+    if (state.giftCodes.length === 0) {
+      adminGiftList.innerHTML = `<p class="text-slate-500 italic">No gift codes created yet.</p>`;
+    } else {
+      adminGiftList.innerHTML = state.giftCodes.map(g => `
+        <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between items-center text-[11px]">
+          <div><strong class="text-emerald-400">${g.code}</strong> - ₦${g.amount}</div>
+          <div class="text-slate-400">Remaining Qty: ${g.remainingQty}/${g.totalQty}</div>
+        </div>
+      `).join('');
+    }
   }
 
-  // Admin View: Pending Transactions Table
   const adminTxTable = document.getElementById('adminTxTable');
-  const pendingTx = state.transactions.filter(t => t.status === 'Pending');
-  
-  if (pendingTx.length === 0) {
-    adminTxTable.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">No pending transactions found.</td></tr>`;
-  } else {
-    adminTxTable.innerHTML = pendingTx.map(tx => `
-      <tr>
-        <td class="p-2.5 font-medium text-slate-200">${tx.user}</td>
-        <td class="p-2.5">${tx.type}</td>
-        <td class="p-2.5 font-bold text-white">₦${tx.amount.toLocaleString()}</td>
-        <td class="p-2.5 text-emerald-400 font-bold">₦${(tx.amount - (tx.fee || 0)).toLocaleString()}</td>
-        <td class="p-2.5 space-x-1">
-          <button onclick="processAdminTx('${tx.id}', 'Approve')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded">Approve</button>
-          <button onclick="processAdminTx('${tx.id}', 'Reject')" class="bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded">Reject</button>
-        </td>
-      </tr>
-    `).join('');
+  if (adminTxTable) {
+    const pendingTx = state.transactions.filter(t => t.status === 'Pending');
+    if (pendingTx.length === 0) {
+      adminTxTable.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">No pending transactions found.</td></tr>`;
+    } else {
+      adminTxTable.innerHTML = pendingTx.map(tx => `
+        <tr>
+          <td class="p-2.5 font-medium text-slate-200">${tx.user}</td>
+          <td class="p-2.5">${tx.type}</td>
+          <td class="p-2.5 font-bold text-white">₦${tx.amount.toLocaleString()}</td>
+          <td class="p-2.5 text-emerald-400 font-bold">₦${(tx.amount - (tx.fee || 0)).toLocaleString()}</td>
+          <td class="p-2.5 space-x-1">
+            <button onclick="processAdminTx('${tx.id}', 'Approve')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded">Approve</button>
+            <button onclick="processAdminTx('${tx.id}', 'Reject')" class="bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded">Reject</button>
+          </td>
+        </tr>
+      `).join('');
+    }
   }
 }
 
 // ==========================================
-// ACTIONS & LOGIC
+// CORE ACTIONS & MODALS
 // ==========================================
-
 function claimDailyCheckin() {
   const today = new Date().toDateString();
   if (state.user.lastCheckin === today) {
@@ -314,7 +301,7 @@ function claimDailyCheckin() {
   state.user.lastCheckin = today;
   state.transactions.unshift({
     id: 'tx_' + Date.now(),
-    user: state.user.id,
+    user: currentUser ? currentUser.email : state.user.id,
     type: 'Daily Reward',
     amount: 50,
     fee: 0,
@@ -327,7 +314,6 @@ function claimDailyCheckin() {
   alert('Success! ₦50 daily check-in bonus added to your balance.');
 }
 
-// Gift Code: Admin Create
 function createGiftCode() {
   const code = document.getElementById('adminCodeName').value.trim().toUpperCase();
   const amount = parseFloat(document.getElementById('adminCodeAmount').value);
@@ -359,7 +345,6 @@ function createGiftCode() {
   alert(`Gift code ${code} for ₦${amount} (Qty: ${qty}) created successfully!`);
 }
 
-// Gift Code: User Redeem
 function redeemGiftCode() {
   const inputCode = document.getElementById('giftCodeInput').value.trim().toUpperCase();
   if (!inputCode) {
@@ -389,7 +374,7 @@ function redeemGiftCode() {
 
   state.transactions.unshift({
     id: 'tx_' + Date.now(),
-    user: state.user.id,
+    user: currentUser ? currentUser.email : state.user.id,
     type: `Gift Code (${inputCode})`,
     amount: giftObj.amount,
     fee: 0,
@@ -403,7 +388,6 @@ function redeemGiftCode() {
   alert(`Success! ₦${giftObj.amount.toLocaleString()} added to your account.`);
 }
 
-// Buy VIP Package with 24-Hour Timer Setup
 function buyVipPackage(pkgId) {
   const pkg = VIP_PACKAGES.find(p => p.id === pkgId);
   const currentCount = state.user.purchases[pkgId] || 0;
@@ -435,7 +419,7 @@ function buyVipPackage(pkgId) {
 
   state.transactions.unshift({
     id: 'tx_' + now,
-    user: state.user.id,
+    user: currentUser ? currentUser.email : state.user.id,
     type: `Invest: ${pkg.name}`,
     amount: pkg.price,
     fee: 0,
@@ -445,10 +429,9 @@ function buyVipPackage(pkgId) {
 
   saveLocalState();
   render();
-  alert(`Congratulations! You have successfully purchased ${pkg.name}. Daily returns will drop every 24 hours for ${pkg.days} days.`);
+  alert(`Congratulations! You have successfully purchased ${pkg.name}. Daily returns drop every 24 hours.`);
 }
 
-// Claim Due 24-Hour Income
 function claimAllDailyIncomes() {
   const now = Date.now();
   const DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -474,7 +457,7 @@ function claimAllDailyIncomes() {
     state.user.balance += totalClaimed;
     state.transactions.unshift({
       id: 'tx_' + now,
-      user: state.user.id,
+      user: currentUser ? currentUser.email : state.user.id,
       type: '24H Investment Returns',
       amount: totalClaimed,
       fee: 0,
@@ -484,7 +467,7 @@ function claimAllDailyIncomes() {
 
     saveLocalState();
     render();
-    alert(`Success! Harvested ₦${totalClaimed.toLocaleString()} in 24-hour investment returns.`);
+    alert(`Success! Harvested ₦${totalClaimed.toLocaleString()} in investment returns.`);
   } else {
     alert('No investment earnings are due yet. Income drops every 24 hours from purchase time.');
   }
@@ -499,7 +482,7 @@ function submitDeposit() {
 
   state.transactions.unshift({
     id: 'tx_' + Date.now(),
-    user: state.user.id,
+    user: currentUser ? currentUser.email : state.user.id,
     type: 'Deposit',
     amount: amount,
     fee: 0,
@@ -543,7 +526,7 @@ function submitWithdrawal() {
 
   state.transactions.unshift({
     id: 'tx_' + Date.now(),
-    user: state.user.id,
+    user: currentUser ? currentUser.email : state.user.id,
     type: 'Withdrawal',
     amount: amount,
     fee: fee,
@@ -604,12 +587,19 @@ function copyReferralLink() {
   alert('Referral link copied to clipboard!');
 }
 
-function handleAuthAction() {
-  alert('Logged out successfully.');
-}
-
+// ==========================================
+// INITIALIZATION
+// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
   loadLocalState();
-  render();
+  
+  // Check if session exists
+  if (currentUser) {
+    showMainApp(false);
+  } else {
+    document.getElementById('authContainer').classList.remove('hidden');
+    document.getElementById('mainApp').classList.add('hidden');
+  }
+
   lucide.createIcons();
 });
