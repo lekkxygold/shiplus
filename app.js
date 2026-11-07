@@ -45,24 +45,62 @@ let state = {
   transactions: [],
   activeInvestments: [],
   giftCodes: [],
+  registeredUsersList: [], // Tracks all registered users for admin view
   isAdminView: false
 };
 
 const ADMIN_EMAIL = 'omoopeola1@gmail.com';
 
 function loadLocalState() {
-  const saved = localStorage.getItem('shiplus_state');
+  const saved = localStorage.getItem('shiplus_global_state');
   if (saved) {
     try { state = JSON.parse(saved); } catch(e) {}
   }
   const savedSession = localStorage.getItem('shiplus_session');
   if (savedSession) {
     currentUser = JSON.parse(savedSession);
+    // Load specific user profile if stored
+    const userProfile = localStorage.getItem('shiplus_user_' + currentUser.email);
+    if (userProfile) {
+      try { state.user = JSON.parse(userProfile); } catch(e) {}
+    }
   }
 }
 
 function saveLocalState() {
-  localStorage.setItem('shiplus_state', JSON.stringify(state));
+  localStorage.setItem('shiplus_global_state', JSON.stringify({
+    transactions: state.transactions,
+    giftCodes: state.giftCodes,
+    allUsersNetwork: state.allUsersNetwork,
+    registeredUsersList: state.registeredUsersList
+  }));
+  if (currentUser) {
+    localStorage.setItem('shiplus_user_' + currentUser.email, JSON.stringify(state.user));
+    localStorage.setItem('shiplus_inv_' + currentUser.email, JSON.stringify(state.activeInvestments));
+  }
+}
+
+function loadUserData(email) {
+  const userProfile = localStorage.getItem('shiplus_user_' + email);
+  if (userProfile) {
+    try { state.user = JSON.parse(userProfile); } catch(e) {}
+  } else {
+    state.user = {
+      id: 'usr_' + Date.now(),
+      balance: 1000,
+      lastCheckin: null,
+      purchases: {},
+      redeemedCodes: [],
+      inviter: null,
+      bankAccount: null
+    };
+  }
+  const userInvs = localStorage.getItem('shiplus_inv_' + email);
+  if (userInvs) {
+    try { state.activeInvestments = JSON.parse(userInvs); } catch(e) {}
+  } else {
+    state.activeInvestments = [];
+  }
 }
 
 // ==========================================
@@ -106,10 +144,11 @@ function checkAndProcessAutomaticIncome() {
 
 setInterval(() => {
   if (currentUser) {
+    loadLocalState();
     checkAndProcessAutomaticIncome();
     render();
   }
-}, 10000);
+}, 5000);
 
 // ==========================================
 // AUTHENTICATION LOGIC
@@ -136,10 +175,9 @@ function switchAuthTab(tab) {
 async function handleRegister(e) {
   e.preventDefault();
   const fullName = document.getElementById('regFullName').value.trim();
-  const email = document.getElementById('regEmail').value.trim();
+  const email = document.getElementById('regEmail').value.trim().toLowerCase();
   const password = document.getElementById('regPassword').value;
   
-  // Get referral code from input field or fallback to URL parameter
   const urlParams = new URLSearchParams(window.location.search);
   const urlRef = urlParams.get('ref');
   const inputRef = document.getElementById('regRefCode').value.trim().toLowerCase();
@@ -151,7 +189,7 @@ async function handleRegister(e) {
       password,
       options: { data: { full_name: fullName } }
     });
-    if (error) {
+    if (error && !error.message.includes('already registered')) {
       alert('Sign up error: ' + error.message);
       return;
     }
@@ -160,15 +198,19 @@ async function handleRegister(e) {
   currentUser = { email, fullName };
   localStorage.setItem('shiplus_session', JSON.stringify(currentUser));
   
+  loadUserData(email);
+
   if (inviterRef) {
     state.user.inviter = inviterRef;
     if (!state.allUsersNetwork) state.allUsersNetwork = {};
-    state.allUsersNetwork[email.toLowerCase()] = inviterRef;
+    state.allUsersNetwork[email] = inviterRef;
   }
 
-  if (state.transactions.length === 0) {
+  // Add welcome bonus transaction if new
+  if (!state.transactions.some(t => t.user === email && t.type === 'Welcome Bonus')) {
+    state.user.balance += 1000;
     state.transactions.unshift({
-      id: 'tx_bonus',
+      id: 'tx_bonus_' + Date.now(),
       user: email,
       type: 'Welcome Bonus',
       amount: 1000,
@@ -178,13 +220,18 @@ async function handleRegister(e) {
     });
   }
 
+  // Register user in global user list for admin monitoring
+  if (!state.registeredUsersList.some(u => u.email === email)) {
+    state.registeredUsersList.push({ email, fullName, joined: new Date().toISOString() });
+  }
+
   saveLocalState();
   showMainApp(true);
 }
 
 async function handleLogin(e) {
   e.preventDefault();
-  const email = document.getElementById('loginEmail').value.trim();
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
   const password = document.getElementById('loginPassword').value;
 
   if (supabaseClient) {
@@ -197,6 +244,14 @@ async function handleLogin(e) {
 
   currentUser = { email, fullName: email.split('@')[0] };
   localStorage.setItem('shiplus_session', JSON.stringify(currentUser));
+  
+  loadUserData(email);
+
+  if (!state.registeredUsersList.some(u => u.email === email)) {
+    state.registeredUsersList.push({ email, fullName: currentUser.fullName, joined: new Date().toISOString() });
+    saveLocalState();
+  }
+
   showMainApp(false);
 }
 
@@ -219,6 +274,7 @@ function showMainApp(isNewUser) {
     state.isAdminView = false;
   }
 
+  loadLocalState();
   checkAndProcessAutomaticIncome();
   render();
 
@@ -270,14 +326,16 @@ function switchTab(tabName) {
 // RENDER FUNCTIONS
 // ==========================================
 function render() {
+  loadLocalState();
+  if (currentUser) {
+    loadUserData(currentUser.email);
+  }
+
   document.getElementById('userBalance').textContent = `₦${state.user.balance.toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
   if (currentUser) {
     document.getElementById('userEmailDisplay').textContent = currentUser.email;
-    
-    // Generate dynamic referral link using current domain (works on localhost & Render automatically)
     const currentBaseUrl = window.location.origin + window.location.pathname;
-    const dynamicRefLink = `${currentBaseUrl}?ref=${currentUser.email}`;
-    document.getElementById('refLink').textContent = dynamicRefLink;
+    document.getElementById('refLink').textContent = `${currentBaseUrl}?ref=${currentUser.email}`;
   }
 
   if (state.user.bankAccount) {
@@ -387,6 +445,27 @@ function render() {
       }
     }
 
+    const adminUsersTable = document.getElementById('adminUsersTable');
+    if (adminUsersTable) {
+      if (!state.registeredUsersList || state.registeredUsersList.length === 0) {
+        adminUsersTable.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">No registered users found.</td></tr>`;
+      } else {
+        adminUsersTable.innerHTML = state.registeredUsersList.map(u => {
+          const uProfile = JSON.parse(localStorage.getItem('shiplus_user_' + u.email) || '{"balance": 1000}');
+          const uInvs = JSON.parse(localStorage.getItem('shiplus_inv_' + u.email) || '[]');
+          const totalInvested = uInvs.reduce((sum, inv) => sum + (inv.price || 3800), 0);
+          return `
+            <tr class="hover:bg-slate-900/50">
+              <td class="p-2.5 font-medium text-white">${u.email}</td>
+              <td class="p-2.5 text-emerald-400 font-bold">₦${(uProfile.balance || 0).toLocaleString()}</td>
+              <td class="p-2.5 text-slate-200">₦${totalInvested.toLocaleString()} (${uInvs.length} Plans)</td>
+              <td class="p-2.5 text-slate-400 text-[10px]">${new Date(u.joined || Date.now()).toLocaleDateString()}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
+
     const adminTxTable = document.getElementById('adminTxTable');
     if (adminTxTable) {
       const pendingTx = state.transactions.filter(t => t.status === 'Pending');
@@ -435,25 +514,29 @@ function saveBankBinding() {
 function distributeMultiLevelReferralBonus(purchaseAmount) {
   if (!state.user.inviter) return;
 
-  const percentages = [0.25, 0.02, 0.01, 0.01]; // Level 1 (25%), Level 2 (2%), Level 3 (1%), Level 4 (1%)
+  const percentages = [0.25, 0.02, 0.01, 0.01]; 
   let currentInviter = state.user.inviter;
 
   percentages.forEach((pct, index) => {
     if (!currentInviter) return;
     const bonus = purchaseAmount * pct;
 
-    if (currentUser && currentUser.email.toLowerCase() === currentInviter.toLowerCase()) {
-      state.user.balance += bonus;
-      state.transactions.unshift({
-        id: 'tx_ref_' + Date.now() + '_' + (index + 1),
-        user: currentUser.email,
-        type: `Referral Commission (Level ${index + 1})`,
-        amount: bonus,
-        fee: 0,
-        status: 'Completed',
-        date: new Date().toISOString()
-      });
+    // Credit inviter profile storage directly so it reflects in their account
+    let inviterData = JSON.parse(localStorage.getItem('shiplus_user_' + currentInviter) || 'null');
+    if (inviterData) {
+      inviterData.balance += bonus;
+      localStorage.setItem('shiplus_user_' + currentInviter, JSON.stringify(inviterData));
     }
+
+    state.transactions.unshift({
+      id: 'tx_ref_' + Date.now() + '_' + (index + 1),
+      user: currentInviter,
+      type: `Referral Commission (Level ${index + 1})`,
+      amount: bonus,
+      fee: 0,
+      status: 'Completed',
+      date: new Date().toISOString()
+    });
 
     currentInviter = state.allUsersNetwork ? state.allUsersNetwork[currentInviter.toLowerCase()] : null;
   });
@@ -492,7 +575,7 @@ function adminManualCredit() {
     return;
   }
 
-  const targetEmail = document.getElementById('adminCreditEmail').value.trim();
+  const targetEmail = document.getElementById('adminCreditEmail').value.trim().toLowerCase();
   const creditAmount = parseFloat(document.getElementById('adminCreditAmount').value);
 
   if (!targetEmail || !creditAmount || creditAmount <= 0) {
@@ -500,7 +583,17 @@ function adminManualCredit() {
     return;
   }
 
-  state.user.balance += creditAmount;
+  // Update target user's balance in storage
+  let targetProfile = JSON.parse(localStorage.getItem('shiplus_user_' + targetEmail) || 'null');
+  if (targetProfile) {
+    targetProfile.balance += creditAmount;
+    localStorage.setItem('shiplus_user_' + targetEmail, JSON.stringify(targetProfile));
+  } else {
+    // create profile if doesn't exist
+    const newProf = { balance: 1000 + creditAmount, purchases: {}, redeemedCodes: [], bankAccount: null };
+    localStorage.setItem('shiplus_user_' + targetEmail, JSON.stringify(newProf));
+  }
+
   state.transactions.unshift({
     id: 'tx_manual_' + Date.now(),
     user: targetEmail,
@@ -533,6 +626,7 @@ function createGiftCode() {
     return;
   }
 
+  loadLocalState();
   if (state.giftCodes.find(g => g.code === code)) {
     alert('A gift code with this name already exists.');
     return;
@@ -555,6 +649,7 @@ function createGiftCode() {
 }
 
 function redeemGiftCode() {
+  loadLocalState();
   const inputCode = document.getElementById('giftCodeInput').value.trim().toUpperCase();
   if (!inputCode) {
     alert('Please enter a gift code.');
@@ -619,6 +714,7 @@ function buyVipPackage(pkgId) {
     id: 'inv_' + now,
     pkgId: pkg.id,
     pkgName: pkg.name,
+    price: pkg.price,
     dailyIncome: pkg.daily,
     daysTotal: pkg.days,
     daysClaimed: 0,
@@ -650,6 +746,7 @@ function submitDeposit() {
     return;
   }
 
+  loadLocalState();
   state.transactions.unshift({
     id: 'tx_' + Date.now(),
     user: currentUser ? currentUser.email : state.user.id,
@@ -713,6 +810,7 @@ function submitWithdrawal() {
   const fee = amount * 0.15;
   state.user.balance -= amount;
 
+  loadLocalState();
   state.transactions.unshift({
     id: 'tx_' + Date.now(),
     user: currentUser ? currentUser.email : state.user.id,
@@ -733,18 +831,27 @@ function submitWithdrawal() {
 function processAdminTx(txId, action) {
   if (!currentUser || currentUser.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) return;
 
+  loadLocalState();
   const tx = state.transactions.find(t => t.id === txId);
   if (!tx) return;
 
+  tx.status = action === 'Approve' ? 'Completed' : 'Rejected';
+  
   if (action === 'Approve') {
-    tx.status = 'Completed';
-    if (tx.type === 'Deposit') {
-      state.user.balance += tx.amount;
+    let targetProfile = JSON.parse(localStorage.getItem('shiplus_user_' + tx.user) || 'null');
+    if (targetProfile) {
+      if (tx.type === 'Deposit') {
+        targetProfile.balance += tx.amount;
+      }
+      localStorage.setItem('shiplus_user_' + tx.user, JSON.stringify(targetProfile));
     }
   } else {
-    tx.status = 'Rejected';
     if (tx.type === 'Withdrawal') {
-      state.user.balance += tx.amount;
+      let targetProfile = JSON.parse(localStorage.getItem('shiplus_user_' + tx.user) || 'null');
+      if (targetProfile) {
+        targetProfile.balance += tx.amount;
+        localStorage.setItem('shiplus_user_' + tx.user, JSON.stringify(targetProfile));
+      }
     }
   }
 
@@ -792,7 +899,6 @@ function copyReferralLink() {
 document.addEventListener('DOMContentLoaded', () => {
   loadLocalState();
   
-  // Automatically grab referral parameter if someone visits via ?ref=email
   const urlParams = new URLSearchParams(window.location.search);
   const refParam = urlParams.get('ref');
   if (refParam && !currentUser) {
@@ -803,6 +909,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (currentUser) {
+    loadUserData(currentUser.email);
     showMainApp(false);
   } else {
     document.getElementById('authContainer').classList.remove('hidden');
