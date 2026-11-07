@@ -12,19 +12,19 @@ try {
 }
 
 // ==========================================
-// VIP PACKAGES DATA
+// VIP FAST CHARGER PACKAGES DATA
 // ==========================================
 const VIP_PACKAGES = [
-  { id: 1, name: 'Shiplus VIP-1', price: 3800, daily: 800, days: 40, total: 32000, commission: 875, limit: 1, image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=400&q=80' },
-  { id: 2, name: 'Shiplus VIP-2', price: 7500, daily: 1350, days: 40, total: 54000, commission: 1875, limit: 1, image: 'https://images.unsplash.com/photo-1609592424089-9fa91e2b4f62?auto=format&fit=crop&w=400&q=80' },
+  { id: 1, name: 'Shiplus VIP-1', price: 3800, daily: 800, days: 40, total: 32000, commission: 875, limit: 1, image: 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?auto=format&fit=crop&w=400&q=80' },
+  { id: 2, name: 'Shiplus VIP-2', price: 7500, daily: 1350, days: 40, total: 54000, commission: 1875, limit: 1, image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=400&q=80' },
   { id: 3, name: 'Shiplus VIP-3', price: 17500, daily: 3200, days: 40, total: 128000, commission: 4375, limit: 3, image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=400&q=80' },
-  { id: 4, name: 'Shiplus VIP-4', price: 37500, daily: 7125, days: 40, total: 285000, commission: 9375, limit: 3, image: 'https://images.unsplash.com/photo-1585338107529-13afc5f02586?auto=format&fit=crop&w=400&q=80' },
-  { id: 5, name: 'Shiplus VIP-5', price: 75000, daily: 15000, days: 40, total: 600000, commission: 18750, limit: 3, image: 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?auto=format&fit=crop&w=400&q=80' },
-  { id: 6, name: 'Shiplus VIP-6', price: 150000, daily: 31500, days: 40, total: 1260000, commission: 37500, limit: 3, image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=400&q=80' },
-  { id: 7, name: 'Shiplus VIP-7', price: 350000, daily: 70000, days: 40, total: 2800000, commission: 87500, limit: 3, image: 'https://images.unsplash.com/photo-1609592424089-9fa91e2b4f62?auto=format&fit=crop&w=400&q=80' },
-  { id: 8, name: 'Shiplus VIP-8', price: 550000, daily: 126000, days: 40, total: 5040000, commission: 137500, limit: 3, image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=400&q=80' },
-  { id: 9, name: 'Shiplus VIP-9', price: 750000, daily: 180000, days: 40, total: 7200000, commission: 187500, limit: 3, image: 'https://images.unsplash.com/photo-1585338107529-13afc5f02586?auto=format&fit=crop&w=400&q=80' },
-  { id: 10, name: 'Shiplus VIP-10', price: 950000, daily: 237500, days: 40, total: 9500000, commission: 237500, limit: 3, image: 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?auto=format&fit=crop&w=400&q=80' }
+  { id: 4, name: 'Shiplus VIP-4', price: 37500, daily: 7125, days: 40, total: 285000, commission: 9375, limit: 3, image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=400&q=80' },
+  { id: 5, name: 'Shiplus VIP-5', price: 75000, daily: 15000, days: 40, total: 600000, commission: 18750, limit: 3, image: 'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=400&q=80' },
+  { id: 6, name: 'Shiplus VIP-6', price: 150000, daily: 31500, days: 40, total: 1260000, commission: 37500, limit: 3, image: 'https://images.unsplash.com/photo-1563770660941-20978e870e26?auto=format&fit=crop&w=400&q=80' },
+  { id: 7, name: 'Shiplus VIP-7', price: 350000, daily: 70000, days: 40, total: 2800000, commission: 87500, limit: 3, image: 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?auto=format&fit=crop&w=400&q=80' },
+  { id: 8, name: 'Shiplus VIP-8', price: 550000, daily: 126000, days: 40, total: 5040000, commission: 137500, limit: 3, image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=400&q=80' },
+  { id: 9, name: 'Shiplus VIP-9', price: 750000, daily: 180000, days: 40, total: 7200000, commission: 187500, limit: 3, image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=400&q=80' },
+  { id: 10, name: 'Shiplus VIP-10', price: 950000, daily: 237500, days: 40, total: 9500000, commission: 237500, limit: 3, image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=400&q=80' }
 ];
 
 // ==========================================
@@ -45,6 +45,8 @@ let state = {
   isAdminView: false
 };
 
+const ADMIN_EMAIL = 'omoopeola1@gmail.com';
+
 function loadLocalState() {
   const saved = localStorage.getItem('shiplus_state');
   if (saved) {
@@ -59,6 +61,53 @@ function loadLocalState() {
 function saveLocalState() {
   localStorage.setItem('shiplus_state', JSON.stringify(state));
 }
+
+// ==========================================
+// AUTOMATIC 24H INCOME DROP ENGINE
+// ==========================================
+function checkAndProcessAutomaticIncome() {
+  const now = Date.now();
+  const DAY_IN_MS = 24 * 60 * 60 * 1000;
+  let totalDropped = 0;
+
+  state.activeInvestments.forEach(inv => {
+    if (inv.daysClaimed < inv.daysTotal) {
+      const elapsedMs = now - inv.lastClaimTimestamp;
+      const dueDays = Math.floor(elapsedMs / DAY_IN_MS);
+
+      if (dueDays > 0) {
+        const playableDays = Math.min(dueDays, inv.daysTotal - inv.daysClaimed);
+        const incomeAmount = playableDays * inv.dailyIncome;
+        
+        inv.daysClaimed += playableDays;
+        inv.lastClaimTimestamp += (playableDays * DAY_IN_MS);
+        totalDropped += incomeAmount;
+      }
+    }
+  });
+
+  if (totalDropped > 0) {
+    state.user.balance += totalDropped;
+    state.transactions.unshift({
+      id: 'tx_' + now,
+      user: currentUser ? currentUser.email : state.user.id,
+      type: 'Automatic 24H Return',
+      amount: totalDropped,
+      fee: 0,
+      status: 'Completed',
+      date: new Date(now).toISOString()
+    });
+    saveLocalState();
+  }
+}
+
+// Run automatic earnings check every 10 seconds
+setInterval(() => {
+  if (currentUser) {
+    checkAndProcessAutomaticIncome();
+    render();
+  }
+}, 10000);
 
 // ==========================================
 // AUTHENTICATION LOGIC
@@ -100,11 +149,9 @@ async function handleRegister(e) {
     }
   }
 
-  // Set session & welcome user
   currentUser = { email, fullName };
   localStorage.setItem('shiplus_session', JSON.stringify(currentUser));
   
-  // Ensure bonus transaction exists
   if (state.transactions.length === 0) {
     state.transactions.unshift({
       id: 'tx_bonus',
@@ -118,7 +165,7 @@ async function handleRegister(e) {
     saveLocalState();
   }
 
-  showMainApp(true); // Display welcome popup modal on registration
+  showMainApp(true);
 }
 
 async function handleLogin(e) {
@@ -149,6 +196,17 @@ function handleLogout() {
 function showMainApp(isNewUser) {
   document.getElementById('authContainer').classList.add('hidden');
   document.getElementById('mainApp').classList.remove('hidden');
+
+  // Strict Admin Control Check
+  const adminNavContainer = document.getElementById('adminNavContainer');
+  if (currentUser && currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+    adminNavContainer.classList.remove('hidden');
+  } else {
+    adminNavContainer.classList.add('hidden');
+    state.isAdminView = false;
+  }
+
+  checkAndProcessAutomaticIncome();
   render();
 
   if (isNewUser) {
@@ -157,11 +215,57 @@ function showMainApp(isNewUser) {
 }
 
 // ==========================================
+// NAVIGATION TABS
+// ==========================================
+function switchTab(tabName) {
+  // Hide all tabs
+  ['dashboard', 'vip', 'team', 'history'].forEach(t => {
+    const content = document.getElementById(`tabContent-${t}`);
+    if (content) content.classList.add('hidden');
+    
+    // Top Nav buttons
+    const topBtn = document.getElementById(`navBtn-${t}`);
+    if (topBtn) {
+      topBtn.className = 'flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-300 hover:bg-slate-800 transition shrink-0 border border-slate-800';
+    }
+    // Bottom Nav buttons
+    const botBtn = document.getElementById(`bottomNav-${t}`);
+    if (botBtn) {
+      botBtn.className = 'flex flex-col items-center text-slate-400 hover:text-white py-1';
+    }
+  });
+
+  // If admin view is active, close it when clicking user tabs
+  if (state.isAdminView) {
+    state.isAdminView = false;
+    document.getElementById('adminView').classList.add('hidden');
+  }
+
+  // Show selected tab
+  const activeContent = document.getElementById(`tabContent-${tabName}`);
+  if (activeContent) activeContent.classList.remove('hidden');
+
+  const activeTopBtn = document.getElementById(`navBtn-${tabName}`);
+  if (activeTopBtn) {
+    activeTopBtn.className = 'flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white transition shrink-0 shadow';
+  }
+
+  const activeBotBtn = document.getElementById(`bottomNav-${tabName}`);
+  if (activeBotBtn) {
+    activeBotBtn.className = 'flex flex-col items-center text-emerald-400 py-1';
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ==========================================
 // RENDER FUNCTIONS
 // ==========================================
 function render() {
-  // Account Balance
   document.getElementById('userBalance').textContent = `₦${state.user.balance.toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
+  if (currentUser) {
+    document.getElementById('userEmailDisplay').textContent = currentUser.email;
+  }
 
   // Daily Checkin Status
   const checkinBtn = document.getElementById('checkinBtn');
@@ -175,22 +279,22 @@ function render() {
   // Active Investments List
   const activeList = document.getElementById('activeInvestmentsList');
   if (state.activeInvestments.length === 0) {
-    activeList.innerHTML = `<p class="text-slate-500 italic">No active investment plans yet. Purchase a VIP plan below to start earning daily returns.</p>`;
+    activeList.innerHTML = `<p class="text-slate-500 italic">No active investment plans yet. Purchase a VIP Fast Charger plan below to start receiving automatic 24-hour income drops.</p>`;
   } else {
     activeList.innerHTML = state.activeInvestments.map(inv => `
       <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
         <div>
           <div class="font-bold text-white">${inv.pkgName}</div>
-          <div class="text-[10px] text-emerald-400">Daily: ₦${inv.dailyIncome.toLocaleString()} | Claimed: ${inv.daysClaimed}/${inv.daysTotal} Days</div>
+          <div class="text-[10px] text-emerald-400">Daily Drop: ₦${inv.dailyIncome.toLocaleString()} | Progress: ${inv.daysClaimed}/${inv.daysTotal} Days</div>
         </div>
         <div class="text-right text-[10px] text-slate-400">
-          Purchased: ${new Date(inv.purchasedAt).toLocaleDateString()}
+          Active & Earning
         </div>
       </div>
     `).join('');
   }
 
-  // VIP Grid
+  // VIP Grid with Charger Images
   const vipGrid = document.getElementById('vipGrid');
   vipGrid.innerHTML = VIP_PACKAGES.map(pkg => {
     const userPurchased = state.user.purchases[pkg.id] || 0;
@@ -251,38 +355,40 @@ function render() {
   `).join('');
 
   // Admin View Elements
-  const adminGiftList = document.getElementById('adminGiftCodesList');
-  if (adminGiftList) {
-    if (state.giftCodes.length === 0) {
-      adminGiftList.innerHTML = `<p class="text-slate-500 italic">No gift codes created yet.</p>`;
-    } else {
-      adminGiftList.innerHTML = state.giftCodes.map(g => `
-        <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between items-center text-[11px]">
-          <div><strong class="text-emerald-400">${g.code}</strong> - ₦${g.amount}</div>
-          <div class="text-slate-400">Remaining Qty: ${g.remainingQty}/${g.totalQty}</div>
-        </div>
-      `).join('');
+  if (state.isAdminView && currentUser && currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+    const adminGiftList = document.getElementById('adminGiftCodesList');
+    if (adminGiftList) {
+      if (state.giftCodes.length === 0) {
+        adminGiftList.innerHTML = `<p class="text-slate-500 italic">No gift codes created yet.</p>`;
+      } else {
+        adminGiftList.innerHTML = state.giftCodes.map(g => `
+          <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between items-center text-[11px]">
+            <div><strong class="text-emerald-400">${g.code}</strong> - ₦${g.amount}</div>
+            <div class="text-slate-400">Remaining Qty: ${g.remainingQty}/${g.totalQty}</div>
+          </div>
+        `).join('');
+      }
     }
-  }
 
-  const adminTxTable = document.getElementById('adminTxTable');
-  if (adminTxTable) {
-    const pendingTx = state.transactions.filter(t => t.status === 'Pending');
-    if (pendingTx.length === 0) {
-      adminTxTable.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">No pending transactions found.</td></tr>`;
-    } else {
-      adminTxTable.innerHTML = pendingTx.map(tx => `
-        <tr>
-          <td class="p-2.5 font-medium text-slate-200">${tx.user}</td>
-          <td class="p-2.5">${tx.type}</td>
-          <td class="p-2.5 font-bold text-white">₦${tx.amount.toLocaleString()}</td>
-          <td class="p-2.5 text-emerald-400 font-bold">₦${(tx.amount - (tx.fee || 0)).toLocaleString()}</td>
-          <td class="p-2.5 space-x-1">
-            <button onclick="processAdminTx('${tx.id}', 'Approve')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded">Approve</button>
-            <button onclick="processAdminTx('${tx.id}', 'Reject')" class="bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded">Reject</button>
-          </td>
-        </tr>
-      `).join('');
+    const adminTxTable = document.getElementById('adminTxTable');
+    if (adminTxTable) {
+      const pendingTx = state.transactions.filter(t => t.status === 'Pending');
+      if (pendingTx.length === 0) {
+        adminTxTable.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">No pending transactions found.</td></tr>`;
+      } else {
+        adminTxTable.innerHTML = pendingTx.map(tx => `
+          <tr>
+            <td class="p-2.5 font-medium text-slate-200">${tx.user}</td>
+            <td class="p-2.5">${tx.type}</td>
+            <td class="p-2.5 font-bold text-white">₦${tx.amount.toLocaleString()}</td>
+            <td class="p-2.5 text-emerald-400 font-bold">₦${(tx.amount - (tx.fee || 0)).toLocaleString()}</td>
+            <td class="p-2.5 space-x-1">
+              <button onclick="processAdminTx('${tx.id}', 'Approve')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded">Approve</button>
+              <button onclick="processAdminTx('${tx.id}', 'Reject')" class="bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded">Reject</button>
+            </td>
+          </tr>
+        `).join('');
+      }
     }
   }
 }
@@ -315,6 +421,11 @@ function claimDailyCheckin() {
 }
 
 function createGiftCode() {
+  if (!currentUser || currentUser.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+    alert('Unauthorized access.');
+    return;
+  }
+
   const code = document.getElementById('adminCodeName').value.trim().toUpperCase();
   const amount = parseFloat(document.getElementById('adminCodeAmount').value);
   const qty = parseInt(document.getElementById('adminCodeQty').value, 10);
@@ -429,48 +540,7 @@ function buyVipPackage(pkgId) {
 
   saveLocalState();
   render();
-  alert(`Congratulations! You have successfully purchased ${pkg.name}. Daily returns drop every 24 hours.`);
-}
-
-function claimAllDailyIncomes() {
-  const now = Date.now();
-  const DAY_IN_MS = 24 * 60 * 60 * 1000;
-  let totalClaimed = 0;
-
-  state.activeInvestments.forEach(inv => {
-    if (inv.daysClaimed < inv.daysTotal) {
-      const elapsedMs = now - inv.lastClaimTimestamp;
-      const dueDays = Math.floor(elapsedMs / DAY_IN_MS);
-
-      if (dueDays > 0) {
-        const playableDays = Math.min(dueDays, inv.daysTotal - inv.daysClaimed);
-        const incomeAmount = playableDays * inv.dailyIncome;
-        
-        inv.daysClaimed += playableDays;
-        inv.lastClaimTimestamp += (playableDays * DAY_IN_MS);
-        totalClaimed += incomeAmount;
-      }
-    }
-  });
-
-  if (totalClaimed > 0) {
-    state.user.balance += totalClaimed;
-    state.transactions.unshift({
-      id: 'tx_' + now,
-      user: currentUser ? currentUser.email : state.user.id,
-      type: '24H Investment Returns',
-      amount: totalClaimed,
-      fee: 0,
-      status: 'Completed',
-      date: new Date(now).toISOString()
-    });
-
-    saveLocalState();
-    render();
-    alert(`Success! Harvested ₦${totalClaimed.toLocaleString()} in investment returns.`);
-  } else {
-    alert('No investment earnings are due yet. Income drops every 24 hours from purchase time.');
-  }
+  alert(`Congratulations! You have successfully purchased ${pkg.name}. Daily returns will now drop automatically every 24 hours.`);
 }
 
 function submitDeposit() {
@@ -502,7 +572,21 @@ function copyAccountDetails() {
   alert('Account number 5112715845 copied to clipboard!');
 }
 
+function openWithdrawModal() {
+  // Restriction: User cannot place withdrawal until they hold an investment plan
+  if (!state.activeInvestments || state.activeInvestments.length === 0) {
+    alert('Withdrawal Locked: You must purchase at least one VIP investment plan before you can make a withdrawal.');
+    return;
+  }
+  openModal('withdrawModal');
+}
+
 function submitWithdrawal() {
+  if (!state.activeInvestments || state.activeInvestments.length === 0) {
+    alert('Withdrawal Denied: No active investment plans found.');
+    return;
+  }
+
   const amount = parseFloat(document.getElementById('withdrawAmount').value);
   const currentHour = new Date().getHours();
 
@@ -542,6 +626,8 @@ function submitWithdrawal() {
 }
 
 function processAdminTx(txId, action) {
+  if (!currentUser || currentUser.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) return;
+
   const tx = state.transactions.find(t => t.id === txId);
   if (!tx) return;
 
@@ -562,20 +648,29 @@ function processAdminTx(txId, action) {
 }
 
 function toggleAdminView() {
+  if (!currentUser || currentUser.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+    alert('Access Denied: Admin privileges are strictly restricted.');
+    return;
+  }
+
   state.isAdminView = !state.isAdminView;
-  const userView = document.getElementById('userView');
   const adminView = document.getElementById('adminView');
   const toggleBtn = document.getElementById('toggleAdminBtn');
 
+  // Hide all user tab contents when admin view is toggled on
+  ['dashboard', 'vip', 'team', 'history'].forEach(t => {
+    document.getElementById(`tabContent-${t}`).classList.add('hidden');
+  });
+
   if (state.isAdminView) {
-    userView.classList.add('hidden');
     adminView.classList.remove('hidden');
-    toggleBtn.textContent = 'Switch to User';
+    toggleBtn.textContent = 'Exit Admin Console';
   } else {
-    userView.classList.remove('hidden');
     adminView.classList.add('hidden');
-    toggleBtn.textContent = 'Switch to Admin';
+    toggleBtn.textContent = 'Admin Console';
+    switchTab('dashboard');
   }
+  render();
 }
 
 function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
@@ -593,7 +688,6 @@ function copyReferralLink() {
 document.addEventListener('DOMContentLoaded', () => {
   loadLocalState();
   
-  // Check if session exists
   if (currentUser) {
     showMainApp(false);
   } else {
