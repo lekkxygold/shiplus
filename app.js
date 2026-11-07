@@ -37,8 +37,11 @@ let state = {
     balance: 1000,
     lastCheckin: null,
     purchases: {},
-    redeemedCodes: []
+    redeemedCodes: [],
+    inviter: null,     // Upline email (Level 1)
+    bankAccount: null  // { bankName, accountNo, accountName }
   },
+  allUsersNetwork: {}, // Stores inviter links for multi-level tracking: { userEmail: inviterEmail }
   transactions: [],
   activeInvestments: [],
   giftCodes: [],
@@ -135,6 +138,7 @@ async function handleRegister(e) {
   const fullName = document.getElementById('regFullName').value.trim();
   const email = document.getElementById('regEmail').value.trim();
   const password = document.getElementById('regPassword').value;
+  const inviterRef = document.getElementById('regRefCode').value.trim().toLowerCase();
 
   if (supabaseClient) {
     const { data, error } = await supabaseClient.auth.signUp({
@@ -151,6 +155,12 @@ async function handleRegister(e) {
   currentUser = { email, fullName };
   localStorage.setItem('shiplus_session', JSON.stringify(currentUser));
   
+  if (inviterRef) {
+    state.user.inviter = inviterRef;
+    if (!state.allUsersNetwork) state.allUsersNetwork = {};
+    state.allUsersNetwork[email.toLowerCase()] = inviterRef;
+  }
+
   if (state.transactions.length === 0) {
     state.transactions.unshift({
       id: 'tx_bonus',
@@ -161,9 +171,9 @@ async function handleRegister(e) {
       status: 'Completed',
       date: new Date().toISOString()
     });
-    saveLocalState();
   }
 
+  saveLocalState();
   showMainApp(true);
 }
 
@@ -216,7 +226,7 @@ function showMainApp(isNewUser) {
 // NAVIGATION TABS
 // ==========================================
 function switchTab(tabName) {
-  ['dashboard', 'vip', 'team', 'history'].forEach(t => {
+  ['dashboard', 'vip', 'team', 'account', 'history'].forEach(t => {
     const content = document.getElementById(`tabContent-${t}`);
     if (content) content.classList.add('hidden');
     
@@ -258,6 +268,16 @@ function render() {
   document.getElementById('userBalance').textContent = `₦${state.user.balance.toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
   if (currentUser) {
     document.getElementById('userEmailDisplay').textContent = currentUser.email;
+    document.getElementById('refLink').textContent = `https://shiplus.com/register?ref=${currentUser.email}`;
+  }
+
+  if (state.user.bankAccount) {
+    document.getElementById('bindBankName').value = state.user.bankAccount.bankName || '';
+    document.getElementById('bindAccountNo').value = state.user.bankAccount.accountNo || '';
+    document.getElementById('bindAccountName').value = state.user.bankAccount.accountName || '';
+    document.getElementById('modalBoundBankInfo').textContent = `${state.user.bankAccount.bankName} (${state.user.bankAccount.accountNo})`;
+  } else {
+    document.getElementById('modalBoundBankInfo').textContent = 'Not Bound (Go to Account tab)';
   }
 
   const checkinBtn = document.getElementById('checkinBtn');
@@ -382,39 +402,54 @@ function render() {
 }
 
 // ==========================================
-// ADMIN MANUAL CREDIT FUNCTION
+// BANK ACCOUNT BINDING
 // ==========================================
-function adminManualCredit() {
-  if (!currentUser || currentUser.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-    alert('Unauthorized access.');
+function saveBankBinding() {
+  const bankName = document.getElementById('bindBankName').value.trim();
+  const accountNo = document.getElementById('bindAccountNo').value.trim();
+  const accountName = document.getElementById('bindAccountName').value.trim();
+
+  if (!bankName || !accountNo || !accountName || accountNo.length < 10) {
+    alert('Please enter valid bank details and a complete 10-digit account number.');
     return;
   }
 
-  const targetEmail = document.getElementById('adminCreditEmail').value.trim();
-  const creditAmount = parseFloat(document.getElementById('adminCreditAmount').value);
-
-  if (!targetEmail || !creditAmount || creditAmount <= 0) {
-    alert('Please provide a valid user email and credit amount.');
-    return;
-  }
-
-  // Credit user balance and log transaction
-  state.user.balance += creditAmount;
-  state.transactions.unshift({
-    id: 'tx_manual_' + Date.now(),
-    user: targetEmail,
-    type: 'Admin Manual Credit',
-    amount: creditAmount,
-    fee: 0,
-    status: 'Completed',
-    date: new Date().toISOString()
-  });
-
+  state.user.bankAccount = { bankName, accountNo, accountName };
   saveLocalState();
-  document.getElementById('adminCreditEmail').value = '';
-  document.getElementById('adminCreditAmount').value = '';
   render();
-  alert(`Successfully credited ₦${creditAmount.toLocaleString()} to ${targetEmail}!`);
+  alert('Withdrawal bank account saved successfully!');
+}
+
+// ==========================================
+// AUTOMATED MULTI-LEVEL REFERRAL ENGINE
+// ==========================================
+function distributeMultiLevelReferralBonus(purchaseAmount) {
+  if (!state.user.inviter) return;
+
+  const percentages = [0.25, 0.02, 0.01, 0.01]; // Level 1 (25%), Level 2 (2%), Level 3 (1%), Level 4 (1%)
+  let currentInviter = state.user.inviter;
+
+  percentages.forEach((pct, index) => {
+    if (!currentInviter) return;
+    const bonus = purchaseAmount * pct;
+
+    // If inviter is current active user on this device session, credit instantly
+    if (currentUser && currentUser.email.toLowerCase() === currentInviter.toLowerCase()) {
+      state.user.balance += bonus;
+      state.transactions.unshift({
+        id: 'tx_ref_' + Date.now() + '_' + (index + 1),
+        user: currentUser.email,
+        type: `Referral Commission (Level ${index + 1})`,
+        amount: bonus,
+        fee: 0,
+        status: 'Completed',
+        date: new Date().toISOString()
+      });
+    }
+
+    // Traverse up network tree for next level
+    currentInviter = state.allUsersNetwork ? state.allUsersNetwork[currentInviter.toLowerCase()] : null;
+  });
 }
 
 // ==========================================
@@ -442,6 +477,38 @@ function claimDailyCheckin() {
   saveLocalState();
   render();
   alert('Success! ₦50 daily check-in bonus added to your balance.');
+}
+
+function adminManualCredit() {
+  if (!currentUser || currentUser.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+    alert('Unauthorized access.');
+    return;
+  }
+
+  const targetEmail = document.getElementById('adminCreditEmail').value.trim();
+  const creditAmount = parseFloat(document.getElementById('adminCreditAmount').value);
+
+  if (!targetEmail || !creditAmount || creditAmount <= 0) {
+    alert('Please provide a valid user email and credit amount.');
+    return;
+  }
+
+  state.user.balance += creditAmount;
+  state.transactions.unshift({
+    id: 'tx_manual_' + Date.now(),
+    user: targetEmail,
+    type: 'Admin Manual Credit',
+    amount: creditAmount,
+    fee: 0,
+    status: 'Completed',
+    date: new Date().toISOString()
+  });
+
+  saveLocalState();
+  document.getElementById('adminCreditEmail').value = '';
+  document.getElementById('adminCreditAmount').value = '';
+  render();
+  alert(`Successfully credited ₦${creditAmount.toLocaleString()} to ${targetEmail}!`);
 }
 
 function createGiftCode() {
@@ -562,6 +629,9 @@ function buyVipPackage(pkgId) {
     date: new Date(now).toISOString()
   });
 
+  // Trigger Multi-Level Referral Commission Payout
+  distributeMultiLevelReferralBonus(pkg.price);
+
   saveLocalState();
   render();
   alert(`Congratulations! You have successfully purchased ${pkg.name}. Daily returns will now drop automatically every 24 hours.`);
@@ -569,8 +639,8 @@ function buyVipPackage(pkgId) {
 
 function submitDeposit() {
   const amount = parseFloat(document.getElementById('depositAmount').value);
-  if (!amount || amount < 1000) {
-    alert('Minimum deposit amount is ₦1,000.');
+  if (!amount || amount < 3800) {
+    alert('Minimum deposit amount for Shiplus is ₦3,800.');
     return;
   }
 
@@ -597,6 +667,12 @@ function copyAccountDetails() {
 }
 
 function openWithdrawModal() {
+  if (!state.user.bankAccount) {
+    alert('Please bind your withdrawal bank account in the Account tab first.');
+    switchTab('account');
+    return;
+  }
+
   if (!state.activeInvestments || state.activeInvestments.length === 0) {
     alert('Withdrawal Locked: You must purchase at least one VIP investment plan before you can make a withdrawal.');
     return;
@@ -680,7 +756,7 @@ function toggleAdminView() {
   const adminView = document.getElementById('adminView');
   const toggleBtn = document.getElementById('toggleAdminBtn');
 
-  ['dashboard', 'vip', 'team', 'history'].forEach(t => {
+  ['dashboard', 'vip', 'team', 'account', 'history'].forEach(t => {
     document.getElementById(`tabContent-${t}`).classList.add('hidden');
   });
 
