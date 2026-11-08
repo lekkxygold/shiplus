@@ -109,7 +109,6 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <!-- Admin Console trigger icon (matches image top right warning badge) -->
           <div id="adminNavContainer" class="hidden">
             <button onclick="toggleAdminView()" id="toggleAdminBtn" class="w-9 h-9 bg-amber-50 border border-amber-200 text-amber-600 rounded-xl flex items-center justify-center hover:bg-amber-100 transition shadow-sm">
               <i data-lucide="alert-circle" class="w-4 h-4"></i>
@@ -212,7 +211,7 @@
         <!-- VIP SECTION TITLE HEADER -->
         <div class="space-y-2 pt-2">
           <div class="flex items-center gap-2">
-            <i data-lucide="Flame" class="w-5 h-5 text-emerald-600 fill-emerald-600"></i>
+            <i data-lucide="flame" class="w-5 h-5 text-emerald-600 fill-emerald-600"></i>
             <h2 class="text-base font-black text-slate-900">VIP Shiplus Fast Charging Packages</h2>
           </div>
           <div class="bg-emerald-50 border border-emerald-200/80 rounded-xl px-3 py-2 text-xs font-bold text-emerald-800 flex justify-between items-center">
@@ -302,33 +301,64 @@
         </div>
       </div>
 
-      <!-- ================= TAB: MY (ACCOUNT & BANK BINDING) ================= -->
+      <!-- ================= TAB: MY (ACCOUNT & BANK BINDING - MATCHING REFERENCE IMAGE) ================= -->
       <div id="tabContent-my" class="hidden space-y-4">
-        <div class="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm space-y-4">
+        
+        {/* UNBOUND VIEW CONTAINER */}
+        <div id="bankUnboundView" class="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm space-y-4">
           <h3 class="text-xs font-black text-slate-900 flex items-center gap-2">
             <i data-lucide="landmark" class="w-4 h-4 text-emerald-600"></i> Bind Payout Bank Account
           </h3>
           <div class="space-y-3">
             <div>
               <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Bank Name</label>
-              <input type="text" id="bindBankName" placeholder="e.g. OPay, Moniepoint" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none" />
+              <input type="text" id="bindBankName" placeholder="e.g. OPay, Moniepoint" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs text-slate-900 focus:outline-none" />
             </div>
             <div>
               <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Account Number</label>
-              <input type="text" id="bindAccountNo" maxlength="10" placeholder="0123456789" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none" />
+              <input type="text" id="bindAccountNo" maxlength="10" placeholder="0123456789" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs text-slate-900 focus:outline-none" />
             </div>
             <div>
               <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Account Holder Name</label>
-              <input type="text" id="bindAccountName" placeholder="Full name" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none" />
+              <input type="text" id="bindAccountName" placeholder="Full name matching bank" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs text-slate-900 focus:outline-none" />
             </div>
-            <button onclick="saveBankBinding()" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl text-xs shadow">
+            <button onclick="saveBankBinding()" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-2xl text-xs shadow">
               Save Bank Details
             </button>
           </div>
         </div>
+
+        {/* BOUND VIEW CONTAINER (MATCHING EXACTLY THE REFERENCE IMAGE WITH DARK THEME CARD) */}
+        <div id="bankBoundView" class="hidden bg-[#18181b] text-white border border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
+          <div class="flex justify-between items-center">
+            <h3 class="text-base font-black tracking-wide text-white">Withdrawal account</h3>
+            <span class="bg-[#14532d] text-[#4ade80] border border-[#22c55e]/30 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">BOUND</span>
+          </div>
+
+          <div class="space-y-1">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">BANK</span>
+            <div id="boundBankDisplay" class="text-xl font-black text-white">Opay</div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-[#27272a] border border-slate-800 p-3.5 rounded-2xl space-y-1">
+              <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">ACCOUNT NUMBER</span>
+              <div id="boundAccNoDisplay" class="text-xs font-black text-white tracking-wider">9138904980</div>
+            </div>
+            <div class="bg-[#27272a] border border-slate-800 p-3.5 rounded-2xl space-y-1">
+              <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">ACCOUNT NAME</span>
+              <div id="boundAccNameDisplay" class="text-[11px] font-black text-white uppercase truncate">OLALEKAN OLUWOLE OGUNSOLA</div>
+            </div>
+          </div>
+
+          <button onclick="unlockBankEdit()" class="w-full bg-transparent hover:bg-slate-800 text-white font-bold py-3.5 rounded-2xl text-xs border border-slate-700 transition shadow-sm">
+            Change withdrawal account
+          </button>
+        </div>
+
       </div>
 
-      <!-- ================= ADMIN CONSOLE VIEW ================= -->
+      <!-- ================= ADMIN CONSOLE VIEW (WITH PLATFORM SETTINGS & USER INVESTMENTS) ================= -->
       <div id="adminView" class="hidden space-y-4">
         <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex justify-between items-center">
           <div>
@@ -338,15 +368,37 @@
           <span class="bg-amber-500 text-white text-[9px] font-black px-2.5 py-1 rounded-full">ADMIN</span>
         </div>
 
+        <!-- PLATFORM SETTINGS -->
         <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm space-y-3">
-          <h3 class="text-xs font-black text-slate-900">Platform Database Profiles</h3>
+          <h3 class="text-xs font-black text-slate-900 flex items-center gap-1.5">
+            <i data-lucide="settings" class="w-4 h-4 text-emerald-600"></i> Global Platform Settings
+          </h3>
+          <div class="grid grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Min Deposit (₦)</label>
+              <input type="number" id="settingMinDeposit" value="3800" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Daily Check-in (₦)</label>
+              <input type="number" id="settingCheckin" value="50" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs" />
+            </div>
+          </div>
+          <button onclick="savePlatformSettings()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs">
+            Save Platform Settings
+          </button>
+        </div>
+
+        <!-- PLATFORM PROFILES TABLE WITH BALANCES & INVESTMENTS -->
+        <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm space-y-3">
+          <h3 class="text-xs font-black text-slate-900">All User Profiles (Balances & Investments)</h3>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
               <thead class="bg-slate-50 text-slate-400 uppercase text-[9px]">
                 <tr>
-                  <th class="p-2.5">Email</th>
+                  <th class="p-2.5">User Email</th>
                   <th class="p-2.5">Balance</th>
-                  <th class="p-2.5">Investment</th>
+                  <th class="p-2.5">Active Investment</th>
+                  <th class="p-2.5">Bound Bank</th>
                 </tr>
               </thead>
               <tbody id="adminUsersTable" class="divide-y divide-slate-100"></tbody>
@@ -394,7 +446,7 @@
 
     </main>
 
-    <!-- BOTTOM NAVIGATION BAR (MATCHING 5-ITEM IMAGE LAYOUT) -->
+    <!-- BOTTOM NAVIGATION BAR (5 ITEMS) -->
     <div class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-100 px-3 py-2 shadow-lg">
       <div class="max-w-md mx-auto grid grid-cols-5 text-center">
         <button onclick="switchTab('dashboard')" id="bottomNav-dashboard" class="flex flex-col items-center text-emerald-600 py-1 transition">
@@ -422,12 +474,12 @@
 
   </div>
 
-  <!-- WELCOME POPUP MODAL -->
+  <!-- WELCOME MODAL -->
   <div id="welcomeModal" class="hidden fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-xl space-y-4">
       <div class="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center mx-auto text-2xl font-black shadow-lg shadow-emerald-500/20">⚡</div>
       <h3 class="text-lg font-black text-slate-900">Welcome to Shiplus!</h3>
-      <p class="text-xs text-slate-500">You have received a <strong class="text-emerald-600">₦1,000 Sign-up Bonus</strong>. Join our official Telegram group for updates!</p>
+      <p class="text-xs text-slate-500">You have received a <strong class="text-emerald-600">₦1,000 Sign-up Bonus</strong>. Join our official Telegram group!</p>
       <a href="https://t.me/+5cxZNXcGRmo5NWJk" target="_blank" onclick="closeModal('welcomeModal')" class="block w-full bg-emerald-600 text-white font-bold py-3 rounded-xl text-xs">Join Telegram Group</a>
       <button onclick="closeModal('welcomeModal')" class="block w-full bg-slate-100 text-slate-600 font-bold py-2.5 rounded-xl text-xs">Continue</button>
     </div>
