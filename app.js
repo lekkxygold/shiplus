@@ -54,9 +54,7 @@ async function loadUserData(email) {
   let { data: profile } = await supabaseClient.from('profiles').select('*').eq('email', email).single();
   
   if (!profile) {
-    const { data: authUser } = await supabaseClient.auth.getUser();
-    const userId = authUser?.user?.id || ('usr_' + Date.now());
-    
+    const userId = 'usr_' + Date.now();
     const newProfile = {
       id: userId,
       email: email,
@@ -196,38 +194,51 @@ async function handleRegister(e) {
   const inviterRef = inputRef || (urlRef ? urlRef.toLowerCase() : null);
 
   if (supabaseClient) {
-    const { data, error } = await supabaseClient.auth.signUp({
+    const { error } = await supabaseClient.auth.signUp({
       email,
       password,
       options: { data: { full_name: fullName } }
     });
     if (error && !error.message.includes('already registered')) {
-      alert('Sign up error: ' + error.message);
-      return;
+      console.warn('Supabase auth notice:', error.message);
     }
   }
 
   currentUser = { email, fullName };
   localStorage.setItem('shiplus_session', JSON.stringify(currentUser));
   
-  await loadUserData(email);
-
-  if (inviterRef) {
-    state.user.inviter = inviterRef;
-    await saveUserProfile();
+  if (supabaseClient) {
+    let { data: existingProf } = await supabaseClient.from('profiles').select('*').eq('email', email).single();
+    if (!existingProf) {
+      await supabaseClient.from('profiles').insert([{
+        id: 'usr_' + Date.now(),
+        email: email,
+        balance: 1000,
+        inviter: inviterRef || null,
+        bank_account: null,
+        purchases: {},
+        redeemed_codes: []
+      }]);
+    } else if (inviterRef && !existingProf.inviter) {
+      await supabaseClient.from('profiles').update({ inviter: inviterRef }).eq('email', email);
+    }
   }
 
-  const { data: existingBonus } = await supabaseClient.from('transactions').select('*').eq('user_email', email).eq('type', 'Welcome Bonus');
-  if (!existingBonus || existingBonus.length === 0) {
-    state.user.balance += 1000;
-    await saveUserProfile();
-    await supabaseClient.from('transactions').insert([{
-      user_email: email,
-      type: 'Welcome Bonus',
-      amount: 1000,
-      fee: 0,
-      status: 'Completed'
-    }]);
+  await loadUserData(email);
+
+  if (supabaseClient) {
+    const { data: existingBonus } = await supabaseClient.from('transactions').select('*').eq('user_email', email).eq('type', 'Welcome Bonus');
+    if (!existingBonus || existingBonus.length === 0) {
+      state.user.balance += 1000;
+      await saveUserProfile();
+      await supabaseClient.from('transactions').insert([{
+        user_email: email,
+        type: 'Welcome Bonus',
+        amount: 1000,
+        fee: 0,
+        status: 'Completed'
+      }]);
+    }
   }
 
   showMainApp(true);
