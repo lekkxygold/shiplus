@@ -8,7 +8,7 @@ let supabaseClient = null;
 try {
   supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 } catch (err) {
-  console.warn('Supabase initialization fallback to local storage mode.');
+  console.warn('Supabase initialization failed.');
 }
 
 // ==========================================
@@ -27,128 +27,140 @@ const VIP_PACKAGES = [
   { id: 10, name: 'Shiplus VIP-10', price: 950000, daily: 237500, days: 40, total: 9500000, commission: 237500, limit: 3, image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=400&q=80' }
 ];
 
-// ==========================================
-// APPLICATION STATE
-// ==========================================
 let currentUser = null;
 let state = {
   user: {
-    id: 'usr_101',
+    id: null,
+    email: '',
     balance: 1000,
     lastCheckin: null,
     purchases: {},
     redeemedCodes: [],
-    inviter: null,     
-    bankAccount: null  
+    inviter: null,
+    bankAccount: null
   },
-  allUsersNetwork: {}, 
   transactions: [],
   activeInvestments: [],
   giftCodes: [],
-  registeredUsersList: [], // Tracks all registered users for admin view
+  allUsersList: [],
   isAdminView: false
 };
 
 const ADMIN_EMAIL = 'omoopeola1@gmail.com';
 
-function loadLocalState() {
-  const saved = localStorage.getItem('shiplus_global_state');
-  if (saved) {
-    try { state = JSON.parse(saved); } catch(e) {}
-  }
-  const savedSession = localStorage.getItem('shiplus_session');
-  if (savedSession) {
-    currentUser = JSON.parse(savedSession);
-    // Load specific user profile if stored
-    const userProfile = localStorage.getItem('shiplus_user_' + currentUser.email);
-    if (userProfile) {
-      try { state.user = JSON.parse(userProfile); } catch(e) {}
-    }
-  }
-}
-
-function saveLocalState() {
-  localStorage.setItem('shiplus_global_state', JSON.stringify({
-    transactions: state.transactions,
-    giftCodes: state.giftCodes,
-    allUsersNetwork: state.allUsersNetwork,
-    registeredUsersList: state.registeredUsersList
-  }));
-  if (currentUser) {
-    localStorage.setItem('shiplus_user_' + currentUser.email, JSON.stringify(state.user));
-    localStorage.setItem('shiplus_inv_' + currentUser.email, JSON.stringify(state.activeInvestments));
-  }
-}
-
-function loadUserData(email) {
-  const userProfile = localStorage.getItem('shiplus_user_' + email);
-  if (userProfile) {
-    try { state.user = JSON.parse(userProfile); } catch(e) {}
-  } else {
-    state.user = {
-      id: 'usr_' + Date.now(),
+async function loadUserData(email) {
+  if (!supabaseClient) return;
+  
+  let { data: profile } = await supabaseClient.from('profiles').select('*').eq('email', email).single();
+  
+  if (!profile) {
+    const { data: authUser } = await supabaseClient.auth.getUser();
+    const userId = authUser?.user?.id || ('usr_' + Date.now());
+    
+    const newProfile = {
+      id: userId,
+      email: email,
       balance: 1000,
-      lastCheckin: null,
-      purchases: {},
-      redeemedCodes: [],
       inviter: null,
-      bankAccount: null
+      bank_account: null,
+      purchases: {},
+      redeemed_codes: []
     };
+    await supabaseClient.from('profiles').upsert([newProfile]);
+    profile = newProfile;
   }
-  const userInvs = localStorage.getItem('shiplus_inv_' + email);
-  if (userInvs) {
-    try { state.activeInvestments = JSON.parse(userInvs); } catch(e) {}
-  } else {
-    state.activeInvestments = [];
-  }
+
+  state.user = {
+    id: profile.id,
+    email: profile.email,
+    balance: parseFloat(profile.balance || 1000),
+    inviter: profile.inviter,
+    bankAccount: profile.bank_account,
+    purchases: profile.purchases || {},
+    redeemedCodes: profile.redeemed_codes || []
+  };
+
+  const { data: invs } = await supabaseClient.from('active_investments').select('*').eq('user_email', email);
+  state.activeInvestments = invs || [];
+
+  await fetchGlobalData();
+}
+
+async function fetchGlobalData() {
+  if (!supabaseClient) return;
+
+  const { data: txs } = await supabaseClient.from('transactions').select('*').order('created_at', { ascending: false });
+  state.transactions = txs || [];
+
+  const { data: codes } = await supabaseClient.from('gift_codes').select('*');
+  state.giftCodes = codes || [];
+
+  const { data: users } = await supabaseClient.from('profiles').select('*');
+  state.allUsersList = users || [];
+}
+
+async function saveUserProfile() {
+  if (!supabaseClient || !currentUser) return;
+  await supabaseClient.from('profiles').update({
+    balance: state.user.balance,
+    inviter: state.user.inviter,
+    bank_account: state.user.bankAccount,
+    purchases: state.user.purchases,
+    redeemed_codes: state.user.redeemedCodes
+  }).eq('email', currentUser.email);
 }
 
 // ==========================================
 // AUTOMATIC 24H INCOME DROP ENGINE
 // ==========================================
-function checkAndProcessAutomaticIncome() {
+async function checkAndProcessAutomaticIncome() {
+  if (!currentUser || !state.activeInvestments) return;
   const now = Date.now();
   const DAY_IN_MS = 24 * 60 * 60 * 1000;
   let totalDropped = 0;
 
-  state.activeInvestments.forEach(inv => {
-    if (inv.daysClaimed < inv.daysTotal) {
-      const elapsedMs = now - inv.lastClaimTimestamp;
+  for (let inv of state.activeInvestments) {
+    if (inv.days_claimed < inv.days_total) {
+      const elapsedMs = now - Number(inv.last_claim_timestamp);
       const dueDays = Math.floor(elapsedMs / DAY_IN_MS);
 
       if (dueDays > 0) {
-        const playableDays = Math.min(dueDays, inv.daysTotal - inv.daysClaimed);
-        const incomeAmount = playableDays * inv.dailyIncome;
+        const playableDays = Math.min(dueDays, inv.days_total - inv.days_claimed);
+        const incomeAmount = playableDays * Number(inv.daily_income);
         
-        inv.daysClaimed += playableDays;
-        inv.lastClaimTimestamp += (playableDays * DAY_IN_MS);
+        inv.days_claimed += playableDays;
+        inv.last_claim_timestamp += (playableDays * DAY_IN_MS);
         totalDropped += incomeAmount;
+
+        await supabaseClient.from('active_investments').update({
+          days_claimed: inv.days_claimed,
+          last_claim_timestamp: inv.last_claim_timestamp
+        }).eq('id', inv.id);
       }
     }
-  });
+  }
 
   if (totalDropped > 0) {
     state.user.balance += totalDropped;
-    state.transactions.unshift({
-      id: 'tx_' + now,
-      user: currentUser ? currentUser.email : state.user.id,
+    await saveUserProfile();
+    
+    await supabaseClient.from('transactions').insert([{
+      user_email: currentUser.email,
       type: 'Automatic 24H Return',
       amount: totalDropped,
       fee: 0,
-      status: 'Completed',
-      date: new Date(now).toISOString()
-    });
-    saveLocalState();
+      status: 'Completed'
+    }]);
+    await fetchGlobalData();
   }
 }
 
 setInterval(() => {
   if (currentUser) {
-    loadLocalState();
     checkAndProcessAutomaticIncome();
     render();
   }
-}, 5000);
+}, 10000);
 
 // ==========================================
 // AUTHENTICATION LOGIC
@@ -198,34 +210,26 @@ async function handleRegister(e) {
   currentUser = { email, fullName };
   localStorage.setItem('shiplus_session', JSON.stringify(currentUser));
   
-  loadUserData(email);
+  await loadUserData(email);
 
   if (inviterRef) {
     state.user.inviter = inviterRef;
-    if (!state.allUsersNetwork) state.allUsersNetwork = {};
-    state.allUsersNetwork[email] = inviterRef;
+    await saveUserProfile();
   }
 
-  // Add welcome bonus transaction if new
-  if (!state.transactions.some(t => t.user === email && t.type === 'Welcome Bonus')) {
+  const { data: existingBonus } = await supabaseClient.from('transactions').select('*').eq('user_email', email).eq('type', 'Welcome Bonus');
+  if (!existingBonus || existingBonus.length === 0) {
     state.user.balance += 1000;
-    state.transactions.unshift({
-      id: 'tx_bonus_' + Date.now(),
-      user: email,
+    await saveUserProfile();
+    await supabaseClient.from('transactions').insert([{
+      user_email: email,
       type: 'Welcome Bonus',
       amount: 1000,
       fee: 0,
-      status: 'Completed',
-      date: new Date().toISOString()
-    });
+      status: 'Completed'
+    }]);
   }
 
-  // Register user in global user list for admin monitoring
-  if (!state.registeredUsersList.some(u => u.email === email)) {
-    state.registeredUsersList.push({ email, fullName, joined: new Date().toISOString() });
-  }
-
-  saveLocalState();
   showMainApp(true);
 }
 
@@ -245,13 +249,7 @@ async function handleLogin(e) {
   currentUser = { email, fullName: email.split('@')[0] };
   localStorage.setItem('shiplus_session', JSON.stringify(currentUser));
   
-  loadUserData(email);
-
-  if (!state.registeredUsersList.some(u => u.email === email)) {
-    state.registeredUsersList.push({ email, fullName: currentUser.fullName, joined: new Date().toISOString() });
-    saveLocalState();
-  }
-
+  await loadUserData(email);
   showMainApp(false);
 }
 
@@ -262,7 +260,7 @@ function handleLogout() {
   document.getElementById('authContainer').classList.remove('hidden');
 }
 
-function showMainApp(isNewUser) {
+async function showMainApp(isNewUser) {
   document.getElementById('authContainer').classList.add('hidden');
   document.getElementById('mainApp').classList.remove('hidden');
 
@@ -274,8 +272,8 @@ function showMainApp(isNewUser) {
     state.isAdminView = false;
   }
 
-  loadLocalState();
-  checkAndProcessAutomaticIncome();
+  await fetchGlobalData();
+  await checkAndProcessAutomaticIncome();
   render();
 
   if (isNewUser) {
@@ -325,13 +323,13 @@ function switchTab(tabName) {
 // ==========================================
 // RENDER FUNCTIONS
 // ==========================================
-function render() {
-  loadLocalState();
+async function render() {
   if (currentUser) {
-    loadUserData(currentUser.email);
+    await fetchGlobalData();
+    await loadUserData(currentUser.email);
   }
 
-  document.getElementById('userBalance').textContent = `₦${state.user.balance.toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
+  document.getElementById('userBalance').textContent = `₦${(state.user.balance || 0).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
   if (currentUser) {
     document.getElementById('userEmailDisplay').textContent = currentUser.email;
     const currentBaseUrl = window.location.origin + window.location.pathname;
@@ -356,14 +354,15 @@ function render() {
   }
 
   const activeList = document.getElementById('activeInvestmentsList');
-  if (state.activeInvestments.length === 0) {
+  const investments = state.activeInvestments || [];
+  if (investments.length === 0) {
     activeList.innerHTML = `<p class="text-slate-500 italic">No active investment plans yet. Purchase a VIP Fast Charger plan below to start receiving automatic 24-hour income drops.</p>`;
   } else {
-    activeList.innerHTML = state.activeInvestments.map(inv => `
+    activeList.innerHTML = investments.map(inv => `
       <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
         <div>
-          <div class="font-bold text-white">${inv.pkgName}</div>
-          <div class="text-[10px] text-emerald-400">Daily Drop: ₦${inv.dailyIncome.toLocaleString()} | Progress: ${inv.daysClaimed}/${inv.daysTotal} Days</div>
+          <div class="font-bold text-white">${inv.pkg_name}</div>
+          <div class="text-[10px] text-emerald-400">Daily Drop: ₦${Number(inv.daily_income).toLocaleString()} | Progress: ${inv.days_claimed}/${inv.days_total} Days</div>
         </div>
         <div class="text-right text-[10px] text-slate-400">
           Active & Earning
@@ -374,7 +373,7 @@ function render() {
 
   const vipGrid = document.getElementById('vipGrid');
   vipGrid.innerHTML = VIP_PACKAGES.map(pkg => {
-    const userPurchased = state.user.purchases[pkg.id] || 0;
+    const userPurchased = (state.user.purchases && state.user.purchases[pkg.id]) || 0;
     const isLimitReached = userPurchased >= pkg.limit;
 
     return `
@@ -415,10 +414,12 @@ function render() {
   }).join('');
 
   const userTxTable = document.getElementById('userTxTable');
-  userTxTable.innerHTML = state.transactions.map(tx => `
+  const txs = state.transactions || [];
+  const myTxs = txs.filter(t => currentUser && t.user_email === currentUser.email);
+  userTxTable.innerHTML = myTxs.map(tx => `
     <tr class="hover:bg-slate-900/50">
       <td class="p-2.5 font-medium text-slate-200">${tx.type}</td>
-      <td class="p-2.5 font-bold text-white">₦${tx.amount.toLocaleString()}</td>
+      <td class="p-2.5 font-bold text-white">₦${Number(tx.amount).toLocaleString()}</td>
       <td class="p-2.5">
         <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
           tx.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
@@ -426,20 +427,21 @@ function render() {
           'bg-rose-500/20 text-rose-400 border border-rose-500/30'
         }">${tx.status}</span>
       </td>
-      <td class="p-2.5 text-slate-400 text-[10px]">${new Date(tx.date).toLocaleDateString()}</td>
+      <td class="p-2.5 text-slate-400 text-[10px]">${new Date(tx.created_at).toLocaleDateString()}</td>
     </tr>
   `).join('');
 
   if (state.isAdminView && currentUser && currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
     const adminGiftList = document.getElementById('adminGiftCodesList');
     if (adminGiftList) {
-      if (state.giftCodes.length === 0) {
+      const giftCodes = state.giftCodes || [];
+      if (giftCodes.length === 0) {
         adminGiftList.innerHTML = `<p class="text-slate-500 italic">No gift codes created yet.</p>`;
       } else {
-        adminGiftList.innerHTML = state.giftCodes.map(g => `
+        adminGiftList.innerHTML = giftCodes.map(g => `
           <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between items-center text-[11px]">
             <div><strong class="text-emerald-400">${g.code}</strong> - ₦${g.amount}</div>
-            <div class="text-slate-400">Remaining Qty: ${g.remainingQty}/${g.totalQty}</div>
+            <div class="text-slate-400">Remaining Qty: ${g.remaining_qty}/${g.total_qty}</div>
           </div>
         `).join('');
       }
@@ -447,37 +449,33 @@ function render() {
 
     const adminUsersTable = document.getElementById('adminUsersTable');
     if (adminUsersTable) {
-      if (!state.registeredUsersList || state.registeredUsersList.length === 0) {
+      const allUsers = state.allUsersList || [];
+      if (allUsers.length === 0) {
         adminUsersTable.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">No registered users found.</td></tr>`;
       } else {
-        adminUsersTable.innerHTML = state.registeredUsersList.map(u => {
-          const uProfile = JSON.parse(localStorage.getItem('shiplus_user_' + u.email) || '{"balance": 1000}');
-          const uInvs = JSON.parse(localStorage.getItem('shiplus_inv_' + u.email) || '[]');
-          const totalInvested = uInvs.reduce((sum, inv) => sum + (inv.price || 3800), 0);
-          return `
-            <tr class="hover:bg-slate-900/50">
-              <td class="p-2.5 font-medium text-white">${u.email}</td>
-              <td class="p-2.5 text-emerald-400 font-bold">₦${(uProfile.balance || 0).toLocaleString()}</td>
-              <td class="p-2.5 text-slate-200">₦${totalInvested.toLocaleString()} (${uInvs.length} Plans)</td>
-              <td class="p-2.5 text-slate-400 text-[10px]">${new Date(u.joined || Date.now()).toLocaleDateString()}</td>
-            </tr>
-          `;
-        }).join('');
+        adminUsersTable.innerHTML = allUsers.map(u => `
+          <tr class="hover:bg-slate-900/50">
+            <td class="p-2.5 font-medium text-white">${u.email}</td>
+            <td class="p-2.5 text-emerald-400 font-bold">₦${Number(u.balance || 0).toLocaleString()}</td>
+            <td class="p-2.5 text-slate-200">Active User</td>
+            <td class="p-2.5 text-slate-400 text-[10px]">${new Date(u.created_at || Date.now()).toLocaleDateString()}</td>
+          </tr>
+        `).join('');
       }
     }
 
     const adminTxTable = document.getElementById('adminTxTable');
     if (adminTxTable) {
-      const pendingTx = state.transactions.filter(t => t.status === 'Pending');
+      const pendingTx = txs.filter(t => t.status === 'Pending');
       if (pendingTx.length === 0) {
         adminTxTable.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">No pending transactions found.</td></tr>`;
       } else {
         adminTxTable.innerHTML = pendingTx.map(tx => `
           <tr>
-            <td class="p-2.5 font-medium text-slate-200">${tx.user}</td>
+            <td class="p-2.5 font-medium text-slate-200">${tx.user_email}</td>
             <td class="p-2.5">${tx.type}</td>
-            <td class="p-2.5 font-bold text-white">₦${tx.amount.toLocaleString()}</td>
-            <td class="p-2.5 text-emerald-400 font-bold">₦${(tx.amount - (tx.fee || 0)).toLocaleString()}</td>
+            <td class="p-2.5 font-bold text-white">₦${Number(tx.amount).toLocaleString()}</td>
+            <td class="p-2.5 text-emerald-400 font-bold">₦${(Number(tx.amount) - Number(tx.fee || 0)).toLocaleString()}</td>
             <td class="p-2.5 space-x-1">
               <button onclick="processAdminTx('${tx.id}', 'Approve')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded">Approve</button>
               <button onclick="processAdminTx('${tx.id}', 'Reject')" class="bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded">Reject</button>
@@ -492,7 +490,7 @@ function render() {
 // ==========================================
 // BANK ACCOUNT BINDING
 // ==========================================
-function saveBankBinding() {
+async function saveBankBinding() {
   const bankName = document.getElementById('bindBankName').value.trim();
   const accountNo = document.getElementById('bindAccountNo').value.trim();
   const accountName = document.getElementById('bindAccountName').value.trim();
@@ -503,49 +501,48 @@ function saveBankBinding() {
   }
 
   state.user.bankAccount = { bankName, accountNo, accountName };
-  saveLocalState();
+  await saveUserProfile();
   render();
   alert('Withdrawal bank account saved successfully!');
 }
 
 // ==========================================
-// AUTOMATED MULTI-LEVEL REFERRAL ENGINE
+// MULTI-LEVEL REFERRAL ENGINE
 // ==========================================
-function distributeMultiLevelReferralBonus(purchaseAmount) {
-  if (!state.user.inviter) return;
+async function distributeMultiLevelReferralBonus(purchaseAmount) {
+  if (!state.user.inviter || !supabaseClient) return;
 
-  const percentages = [0.25, 0.02, 0.01, 0.01]; 
+  const percentages = [0.25, 0.02, 0.01, 0.01];
   let currentInviter = state.user.inviter;
 
-  percentages.forEach((pct, index) => {
-    if (!currentInviter) return;
-    const bonus = purchaseAmount * pct;
+  for (let i = 0; i < percentages.length; i++) {
+    if (!currentInviter) break;
+    const bonus = purchaseAmount * percentages[i];
 
-    // Credit inviter profile storage directly so it reflects in their account
-    let inviterData = JSON.parse(localStorage.getItem('shiplus_user_' + currentInviter) || 'null');
-    if (inviterData) {
-      inviterData.balance += bonus;
-      localStorage.setItem('shiplus_user_' + currentInviter, JSON.stringify(inviterData));
+    const { data: inviterProfile } = await supabaseClient.from('profiles').select('*').eq('email', currentInviter).single();
+    if (inviterProfile) {
+      const newBal = Number(inviterProfile.balance || 0) + bonus;
+      await supabaseClient.from('profiles').update({ balance: newBal }).eq('email', currentInviter);
+
+      await supabaseClient.from('transactions').insert([{
+        user_email: currentInviter,
+        type: `Referral Commission (Level ${i + 1})`,
+        amount: bonus,
+        fee: 0,
+        status: 'Completed'
+      }]);
+
+      currentInviter = inviterProfile.inviter;
+    } else {
+      break;
     }
-
-    state.transactions.unshift({
-      id: 'tx_ref_' + Date.now() + '_' + (index + 1),
-      user: currentInviter,
-      type: `Referral Commission (Level ${index + 1})`,
-      amount: bonus,
-      fee: 0,
-      status: 'Completed',
-      date: new Date().toISOString()
-    });
-
-    currentInviter = state.allUsersNetwork ? state.allUsersNetwork[currentInviter.toLowerCase()] : null;
-  });
+  }
 }
 
 // ==========================================
 // CORE ACTIONS & MODALS
 // ==========================================
-function claimDailyCheckin() {
+async function claimDailyCheckin() {
   const today = new Date().toDateString();
   if (state.user.lastCheckin === today) {
     alert('You have already claimed your daily bonus today.');
@@ -554,22 +551,21 @@ function claimDailyCheckin() {
   
   state.user.balance += 50;
   state.user.lastCheckin = today;
-  state.transactions.unshift({
-    id: 'tx_' + Date.now(),
-    user: currentUser ? currentUser.email : state.user.id,
+  await saveUserProfile();
+
+  await supabaseClient.from('transactions').insert([{
+    user_email: currentUser.email,
     type: 'Daily Reward',
     amount: 50,
     fee: 0,
-    status: 'Completed',
-    date: new Date().toISOString()
-  });
+    status: 'Completed'
+  }]);
 
-  saveLocalState();
   render();
   alert('Success! ₦50 daily check-in bonus added to your balance.');
 }
 
-function adminManualCredit() {
+async function adminManualCredit() {
   if (!currentUser || currentUser.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
     alert('Unauthorized access.');
     return;
@@ -583,35 +579,30 @@ function adminManualCredit() {
     return;
   }
 
-  // Update target user's balance in storage
-  let targetProfile = JSON.parse(localStorage.getItem('shiplus_user_' + targetEmail) || 'null');
-  if (targetProfile) {
-    targetProfile.balance += creditAmount;
-    localStorage.setItem('shiplus_user_' + targetEmail, JSON.stringify(targetProfile));
+  const { data: targetProf } = await supabaseClient.from('profiles').select('*').eq('email', targetEmail).single();
+  if (targetProf) {
+    const newBal = Number(targetProf.balance || 0) + creditAmount;
+    await supabaseClient.from('profiles').update({ balance: newBal }).eq('email', targetEmail);
   } else {
-    // create profile if doesn't exist
-    const newProf = { balance: 1000 + creditAmount, purchases: {}, redeemedCodes: [], bankAccount: null };
-    localStorage.setItem('shiplus_user_' + targetEmail, JSON.stringify(newProf));
+    await supabaseClient.from('profiles').insert([{ id: 'usr_' + Date.now(), email: targetEmail, balance: 1000 + creditAmount }]);
   }
 
-  state.transactions.unshift({
-    id: 'tx_manual_' + Date.now(),
-    user: targetEmail,
+  await supabaseClient.from('transactions').insert([{
+    user_email: targetEmail,
     type: 'Admin Manual Credit',
     amount: creditAmount,
     fee: 0,
-    status: 'Completed',
-    date: new Date().toISOString()
-  });
+    status: 'Completed'
+  }]);
 
-  saveLocalState();
   document.getElementById('adminCreditEmail').value = '';
   document.getElementById('adminCreditAmount').value = '';
+  await fetchGlobalData();
   render();
   alert(`Successfully credited ₦${creditAmount.toLocaleString()} to ${targetEmail}!`);
 }
 
-function createGiftCode() {
+async function createGiftCode() {
   if (!currentUser || currentUser.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
     alert('Unauthorized access.');
     return;
@@ -626,44 +617,30 @@ function createGiftCode() {
     return;
   }
 
-  loadLocalState();
-  if (state.giftCodes.find(g => g.code === code)) {
-    alert('A gift code with this name already exists.');
+  const { error } = await supabaseClient.from('gift_codes').insert([{
+    code: code,
+    amount: amount,
+    total_qty: qty,
+    remaining_qty: qty
+  }]);
+
+  if (error) {
+    alert('Error creating gift code: ' + error.message);
     return;
   }
 
-  state.giftCodes.push({
-    code: code,
-    amount: amount,
-    totalQty: qty,
-    remainingQty: qty,
-    createdAt: new Date().toISOString()
-  });
-
-  saveLocalState();
   document.getElementById('adminCodeName').value = '';
   document.getElementById('adminCodeAmount').value = '';
   document.getElementById('adminCodeQty').value = '';
+  await fetchGlobalData();
   render();
   alert(`Gift code ${code} for ₦${amount} (Qty: ${qty}) created successfully!`);
 }
 
-function redeemGiftCode() {
-  loadLocalState();
+async function redeemGiftCode() {
   const inputCode = document.getElementById('giftCodeInput').value.trim().toUpperCase();
   if (!inputCode) {
     alert('Please enter a gift code.');
-    return;
-  }
-
-  const giftObj = state.giftCodes.find(g => g.code === inputCode);
-  if (!giftObj) {
-    alert('Invalid gift code.');
-    return;
-  }
-
-  if (giftObj.remainingQty <= 0) {
-    alert('This gift code has reached its maximum redemptions.');
     return;
   }
 
@@ -672,31 +649,42 @@ function redeemGiftCode() {
     return;
   }
 
-  giftObj.remainingQty -= 1;
-  state.user.redeemedCodes.push(inputCode);
-  state.user.balance += giftObj.amount;
+  const { data: giftObj } = await supabaseClient.from('gift_codes').select('*').eq('code', inputCode).single();
+  if (!giftObj) {
+    alert('Invalid gift code.');
+    return;
+  }
 
-  state.transactions.unshift({
-    id: 'tx_' + Date.now(),
-    user: currentUser ? currentUser.email : state.user.id,
+  if (giftObj.remaining_qty <= 0) {
+    alert('This gift code has reached its maximum redemptions.');
+    return;
+  }
+
+  await supabaseClient.from('gift_codes').update({ remaining_qty: giftObj.remaining_qty - 1 }).eq('code', inputCode);
+
+  state.user.redeemedCodes.push(inputCode);
+  state.user.balance += Number(giftObj.amount);
+  await saveUserProfile();
+
+  await supabaseClient.from('transactions').insert([{
+    user_email: currentUser.email,
     type: `Gift Code (${inputCode})`,
     amount: giftObj.amount,
     fee: 0,
-    status: 'Completed',
-    date: new Date().toISOString()
-  });
+    status: 'Completed'
+  }]);
 
-  saveLocalState();
   document.getElementById('giftCodeInput').value = '';
+  await fetchGlobalData();
   render();
-  alert(`Success! ₦${giftObj.amount.toLocaleString()} added to your account.`);
+  alert(`Success! ₦${Number(giftObj.amount).toLocaleString()} added to your account.`);
 }
 
-function buyVipPackage(pkgId) {
+async function buyVipPackage(pkgId) {
   const pkg = VIP_PACKAGES.find(p => p.id === pkgId);
-  const currentCount = state.user.purchases[pkgId] || 0;
+  const userPurchased = (state.user.purchases && state.user.purchases[pkgId]) || 0;
 
-  if (currentCount >= pkg.limit) {
+  if (userPurchased >= pkg.limit) {
     alert('Purchase limit reached for this package.');
     return;
   }
@@ -707,59 +695,53 @@ function buyVipPackage(pkgId) {
   }
 
   state.user.balance -= pkg.price;
-  state.user.purchases[pkgId] = currentCount + 1;
+  if (!state.user.purchases) state.user.purchases = {};
+  state.user.purchases[pkgId] = userPurchased + 1;
+  await saveUserProfile();
 
   const now = Date.now();
-  state.activeInvestments.push({
-    id: 'inv_' + now,
-    pkgId: pkg.id,
-    pkgName: pkg.name,
+  await supabaseClient.from('active_investments').insert([{
+    user_email: currentUser.email,
+    pkg_name: pkg.name,
     price: pkg.price,
-    dailyIncome: pkg.daily,
-    daysTotal: pkg.days,
-    daysClaimed: 0,
-    lastClaimTimestamp: now,
-    purchasedAt: new Date(now).toISOString()
-  });
+    daily_income: pkg.daily,
+    days_total: pkg.days,
+    days_claimed: 0,
+    last_claim_timestamp: now
+  }]);
 
-  state.transactions.unshift({
-    id: 'tx_' + now,
-    user: currentUser ? currentUser.email : state.user.id,
+  await supabaseClient.from('transactions').insert([{
+    user_email: currentUser.email,
     type: `Invest: ${pkg.name}`,
     amount: pkg.price,
     fee: 0,
-    status: 'Completed',
-    date: new Date(now).toISOString()
-  });
+    status: 'Completed'
+  }]);
 
-  distributeMultiLevelReferralBonus(pkg.price);
-
-  saveLocalState();
+  await distributeMultiLevelReferralBonus(pkg.price);
+  await loadUserData(currentUser.email);
   render();
   alert(`Congratulations! You have successfully purchased ${pkg.name}. Daily returns will now drop automatically every 24 hours.`);
 }
 
-function submitDeposit() {
+async function submitDeposit() {
   const amount = parseFloat(document.getElementById('depositAmount').value);
   if (!amount || amount < 3800) {
     alert('Minimum deposit amount for Shiplus is ₦3,800.');
     return;
   }
 
-  loadLocalState();
-  state.transactions.unshift({
-    id: 'tx_' + Date.now(),
-    user: currentUser ? currentUser.email : state.user.id,
+  await supabaseClient.from('transactions').insert([{
+    user_email: currentUser.email,
     type: 'Deposit',
     amount: amount,
     fee: 0,
-    status: 'Pending',
-    date: new Date().toISOString()
-  });
+    status: 'Pending'
+  }]);
 
-  saveLocalState();
   closeModal('depositModal');
   document.getElementById('depositAmount').value = '';
+  await fetchGlobalData();
   render();
   alert('Deposit request submitted! Awaiting admin confirmation.');
 }
@@ -783,7 +765,7 @@ function openWithdrawModal() {
   openModal('withdrawModal');
 }
 
-function submitWithdrawal() {
+async function submitWithdrawal() {
   if (!state.activeInvestments || state.activeInvestments.length === 0) {
     alert('Withdrawal Denied: No active investment plans found.');
     return;
@@ -809,53 +791,51 @@ function submitWithdrawal() {
 
   const fee = amount * 0.15;
   state.user.balance -= amount;
+  await saveUserProfile();
 
-  loadLocalState();
-  state.transactions.unshift({
-    id: 'tx_' + Date.now(),
-    user: currentUser ? currentUser.email : state.user.id,
+  await supabaseClient.from('transactions').insert([{
+    user_email: currentUser.email,
     type: 'Withdrawal',
     amount: amount,
     fee: fee,
-    status: 'Pending',
-    date: new Date().toISOString()
-  });
+    status: 'Pending'
+  }]);
 
-  saveLocalState();
   closeModal('withdrawModal');
   document.getElementById('withdrawAmount').value = '';
+  await fetchGlobalData();
   render();
   alert(`Withdrawal request submitted! 15% Fee (₦${fee.toLocaleString()}) applied.`);
 }
 
-function processAdminTx(txId, action) {
+async function processAdminTx(txId, action) {
   if (!currentUser || currentUser.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) return;
 
-  loadLocalState();
   const tx = state.transactions.find(t => t.id === txId);
   if (!tx) return;
 
-  tx.status = action === 'Approve' ? 'Completed' : 'Rejected';
-  
+  const newStatus = action === 'Approve' ? 'Completed' : 'Rejected';
+  await supabaseClient.from('transactions').update({ status: newStatus }).eq('id', txId);
+
   if (action === 'Approve') {
-    let targetProfile = JSON.parse(localStorage.getItem('shiplus_user_' + tx.user) || 'null');
-    if (targetProfile) {
+    const { data: targetProf } = await supabaseClient.from('profiles').select('*').eq('email', tx.user_email).single();
+    if (targetProf) {
       if (tx.type === 'Deposit') {
-        targetProfile.balance += tx.amount;
+        const newBal = Number(targetProf.balance || 0) + Number(tx.amount);
+        await supabaseClient.from('profiles').update({ balance: newBal }).eq('email', tx.user_email);
       }
-      localStorage.setItem('shiplus_user_' + tx.user, JSON.stringify(targetProfile));
     }
   } else {
     if (tx.type === 'Withdrawal') {
-      let targetProfile = JSON.parse(localStorage.getItem('shiplus_user_' + tx.user) || 'null');
-      if (targetProfile) {
-        targetProfile.balance += tx.amount;
-        localStorage.setItem('shiplus_user_' + tx.user, JSON.stringify(targetProfile));
+      const { data: targetProf } = await supabaseClient.from('profiles').select('*').eq('email', tx.user_email).single();
+      if (targetProf) {
+        const newBal = Number(targetProf.balance || 0) + Number(tx.amount);
+        await supabaseClient.from('profiles').update({ balance: newBal }).eq('email', tx.user_email);
       }
     }
   }
 
-  saveLocalState();
+  await fetchGlobalData();
   render();
 }
 
@@ -896,24 +876,22 @@ function copyReferralLink() {
 // ==========================================
 // INITIALIZATION
 // ==========================================
-document.addEventListener('DOMContentLoaded', () => {
-  loadLocalState();
-  
-  const urlParams = new URLSearchParams(window.location.search);
-  const refParam = urlParams.get('ref');
-  if (refParam && !currentUser) {
-    const refInput = document.getElementById('regRefCode');
-    if (refInput) {
-      refInput.value = refParam;
-    }
-  }
-
-  if (currentUser) {
-    loadUserData(currentUser.email);
+document.addEventListener('DOMContentLoaded', async () => {
+  const savedSession = localStorage.getItem('shiplus_session');
+  if (savedSession) {
+    currentUser = JSON.parse(savedSession);
+    await loadUserData(currentUser.email);
     showMainApp(false);
   } else {
     document.getElementById('authContainer').classList.remove('hidden');
     document.getElementById('mainApp').classList.add('hidden');
+  }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const refParam = urlParams.get('ref');
+  if (refParam) {
+    const refInput = document.getElementById('regRefCode');
+    if (refInput) refInput.value = refParam;
   }
 
   lucide.createIcons();
