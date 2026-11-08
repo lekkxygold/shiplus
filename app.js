@@ -51,7 +51,7 @@ const ADMIN_EMAIL = 'omoopeola1@gmail.com';
 async function loadUserData(email) {
   if (!supabaseClient) return;
   
-  let { data: profile } = await supabaseClient.from('profiles').select('*').eq('email', email).single();
+  let { data: profile } = await supabaseClient.from('profiles').select('*').eq('email', email).maybeSingle();
   
   if (!profile) {
     const userId = 'usr_' + Date.now();
@@ -62,7 +62,8 @@ async function loadUserData(email) {
       inviter: null,
       bank_account: null,
       purchases: {},
-      redeemed_codes: []
+      redeemed_codes: [],
+      last_checkin: null
     };
     await supabaseClient.from('profiles').upsert([newProfile]);
     profile = newProfile;
@@ -75,7 +76,8 @@ async function loadUserData(email) {
     inviter: profile.inviter,
     bankAccount: profile.bank_account,
     purchases: profile.purchases || {},
-    redeemedCodes: profile.redeemed_codes || []
+    redeemedCodes: profile.redeemed_codes || [],
+    lastCheckin: profile.last_checkin || null
   };
 
   const { data: invs } = await supabaseClient.from('active_investments').select('*').eq('user_email', email);
@@ -104,7 +106,8 @@ async function saveUserProfile() {
     inviter: state.user.inviter,
     bank_account: state.user.bankAccount,
     purchases: state.user.purchases,
-    redeemed_codes: state.user.redeemedCodes
+    redeemed_codes: state.user.redeemedCodes,
+    last_checkin: state.user.lastCheckin
   }).eq('email', currentUser.email);
 }
 
@@ -194,36 +197,28 @@ async function handleRegister(e) {
   const inviterRef = inputRef || (urlRef ? urlRef.toLowerCase() : null);
 
   if (supabaseClient) {
-    const { error } = await supabaseClient.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: fullName } }
-    });
-    if (error && !error.message.includes('already registered')) {
-      console.warn('Supabase auth notice:', error.message);
+    let { data: existingProf } = await supabaseClient.from('profiles').select('*').eq('email', email).maybeSingle();
+    if (existingProf) {
+      alert('Email is already registered. Please login instead.');
+      switchAuthTab('login');
+      return;
     }
+
+    await supabaseClient.from('profiles').insert([{
+      id: 'usr_' + Date.now(),
+      email: email,
+      balance: 1000,
+      inviter: inviterRef || null,
+      bank_account: null,
+      purchases: {},
+      redeemed_codes: [],
+      last_checkin: null
+    }]);
   }
 
   currentUser = { email, fullName };
   localStorage.setItem('shiplus_session', JSON.stringify(currentUser));
   
-  if (supabaseClient) {
-    let { data: existingProf } = await supabaseClient.from('profiles').select('*').eq('email', email).single();
-    if (!existingProf) {
-      await supabaseClient.from('profiles').insert([{
-        id: 'usr_' + Date.now(),
-        email: email,
-        balance: 1000,
-        inviter: inviterRef || null,
-        bank_account: null,
-        purchases: {},
-        redeemed_codes: []
-      }]);
-    } else if (inviterRef && !existingProf.inviter) {
-      await supabaseClient.from('profiles').update({ inviter: inviterRef }).eq('email', email);
-    }
-  }
-
   await loadUserData(email);
 
   if (supabaseClient) {
@@ -250,9 +245,10 @@ async function handleLogin(e) {
   const password = document.getElementById('loginPassword').value;
 
   if (supabaseClient) {
-    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-    if (error) {
-      alert('Login error: ' + error.message);
+    let { data: profile } = await supabaseClient.from('profiles').select('*').eq('email', email).maybeSingle();
+    if (!profile) {
+      alert('Account not found. Please register first.');
+      switchAuthTab('register');
       return;
     }
   }
@@ -362,6 +358,11 @@ async function render() {
     checkinBtn.disabled = true;
     checkinBtn.classList.add('opacity-50', 'cursor-not-allowed');
     checkinBtn.innerText = 'Checked In Today';
+  } else {
+    checkinBtn.disabled = false;
+    checkinBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    checkinBtn.innerHTML = '<i data-lucide="calendar-check" class="w-5 h-5"></i><span>Daily Check-in (+₦50)</span>';
+    lucide.createIcons();
   }
 
   const activeList = document.getElementById('activeInvestmentsList');
@@ -530,7 +531,7 @@ async function distributeMultiLevelReferralBonus(purchaseAmount) {
     if (!currentInviter) break;
     const bonus = purchaseAmount * percentages[i];
 
-    const { data: inviterProfile } = await supabaseClient.from('profiles').select('*').eq('email', currentInviter).single();
+    const { data: inviterProfile } = await supabaseClient.from('profiles').select('*').eq('email', currentInviter).maybeSingle();
     if (inviterProfile) {
       const newBal = Number(inviterProfile.balance || 0) + bonus;
       await supabaseClient.from('profiles').update({ balance: newBal }).eq('email', currentInviter);
@@ -555,7 +556,12 @@ async function distributeMultiLevelReferralBonus(purchaseAmount) {
 // ==========================================
 async function claimDailyCheckin() {
   const today = new Date().toDateString();
-  if (state.user.lastCheckin === today) {
+  
+  // Re-verify from database profile to prevent any double claiming
+  const { data: latestProf } = await supabaseClient.from('profiles').select('last_checkin').eq('email', currentUser.email).maybeSingle();
+  if (latestProf && latestProf.last_checkin === today) {
+    state.user.lastCheckin = today;
+    render();
     alert('You have already claimed your daily bonus today.');
     return;
   }
@@ -590,7 +596,7 @@ async function adminManualCredit() {
     return;
   }
 
-  const { data: targetProf } = await supabaseClient.from('profiles').select('*').eq('email', targetEmail).single();
+  const { data: targetProf } = await supabaseClient.from('profiles').select('*').eq('email', targetEmail).maybeSingle();
   if (targetProf) {
     const newBal = Number(targetProf.balance || 0) + creditAmount;
     await supabaseClient.from('profiles').update({ balance: newBal }).eq('email', targetEmail);
@@ -660,7 +666,7 @@ async function redeemGiftCode() {
     return;
   }
 
-  const { data: giftObj } = await supabaseClient.from('gift_codes').select('*').eq('code', inputCode).single();
+  const { data: giftObj } = await supabaseClient.from('gift_codes').select('*').eq('code', inputCode).maybeSingle();
   if (!giftObj) {
     alert('Invalid gift code.');
     return;
@@ -829,7 +835,7 @@ async function processAdminTx(txId, action) {
   await supabaseClient.from('transactions').update({ status: newStatus }).eq('id', txId);
 
   if (action === 'Approve') {
-    const { data: targetProf } = await supabaseClient.from('profiles').select('*').eq('email', tx.user_email).single();
+    const { data: targetProf } = await supabaseClient.from('profiles').select('*').eq('email', tx.user_email).maybeSingle();
     if (targetProf) {
       if (tx.type === 'Deposit') {
         const newBal = Number(targetProf.balance || 0) + Number(tx.amount);
@@ -838,7 +844,7 @@ async function processAdminTx(txId, action) {
     }
   } else {
     if (tx.type === 'Withdrawal') {
-      const { data: targetProf } = await supabaseClient.from('profiles').select('*').eq('email', tx.user_email).single();
+      const { data: targetProf } = await supabaseClient.from('profiles').select('*').eq('email', tx.user_email).maybeSingle();
       if (targetProf) {
         const newBal = Number(targetProf.balance || 0) + Number(tx.amount);
         await supabaseClient.from('profiles').update({ balance: newBal }).eq('email', tx.user_email);
