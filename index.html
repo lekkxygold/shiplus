@@ -31,6 +31,549 @@
       }
     }
   </script>
+  <style>
+    /* Custom smooth scrollbar */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans pb-28 selection:bg-emerald-500 selection:text-slate-950">
+
+  <!-- ================= AUTH CONTAINER (LOGIN / REGISTER) ================= -->
+  <div id="authContainer" class="min-h-screen flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950">
+    <div class="bg-slate-900/80 backdrop-blur-xl border border-emerald-500/20 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl shadow-emerald-950/40 space-y-6 relative overflow-hidden">
+      
+      <!-- Ambient background glow -->
+      <div class="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="text-center space-y-2 relative z-10">
+        <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-600 via-emerald-500 to-green-400 flex items-center justify-center text-slate-950 font-black text-3xl shadow-xl shadow-emerald-500/30 mx-auto transform hover:rotate-6 transition duration-300">⚡</div>
+        <h1 class="text-2xl font-black tracking-wider text-white">SHIPLUS</h1>
+        <p class="text-xs text-slate-400 font-medium">Join Shiplus Fast Charging & Get <span class="text-emerald-400 font-bold">₦1,000</span> Sign-Up Bonus</p>
+      </div>
+
+      <!-- AUTH FORM TOGGLE TABS -->
+      <div class="flex bg-slate-950/80 p-1 rounded-2xl border border-slate-800/80 relative z-10">
+        <button id="tabRegisterBtn" onclick="switchAuthTab('register')" class="flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-300 bg-emerald-600 text-white shadow-md">Register</button>
+        <button id="tabLoginBtn" onclick="switchAuthTab('login')" class="flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-300 text-slate-400 hover:text-white">Login</button>
+      </div>
+
+      <!-- REGISTER FORM -->
+      <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-4 relative z-10">
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Full Name</label>
+          <input type="text" id="regFullName" required placeholder="John Doe" class="w-full bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 text-xs text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Email Address</label>
+          <input type="email" id="regEmail" required placeholder="name@example.com" class="w-full bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 text-xs text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Password</label>
+          <input type="password" id="regPassword" required placeholder="••••••••" class="w-full bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 text-xs text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Referral Code / Inviter Email (Optional)</label>
+          <input type="text" id="regRefCode" placeholder="e.g. inviter@example.com" class="w-full bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 text-xs text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition" />
+        </div>
+        <button type="submit" class="w-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-green-400 hover:from-emerald-500 hover:to-green-300 text-slate-950 font-black py-3.5 rounded-2xl shadow-lg shadow-emerald-500/25 transition-all transform active:scale-95 text-xs tracking-wide">
+          Create Account (+₦1,000 Bonus)
+        </button>
+      </form>
+
+      <!-- LOGIN FORM -->
+      <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4 hidden relative z-10">
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Email Address</label>
+          <input type="email" id="loginEmail" required placeholder="name@example.com" class="w-full bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 text-xs text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Password</label>
+          <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 text-xs text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition" />
+        </div>
+        <button type="submit" class="w-full bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-emerald-600/20 transition-all transform active:scale-95 text-xs tracking-wide">
+          Login to Dashboard
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+
+  <!-- ================= MAIN APP (AUTHENTICATED) ================= -->
+  <div id="mainApp" class="hidden">
+    
+    <!-- TOP BAR -->
+    <header class="sticky top-0 z-30 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800/80 px-4 py-3.5">
+      <div class="max-w-4xl mx-auto flex justify-between items-center">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-emerald-600 to-green-400 flex items-center justify-center text-slate-950 font-black text-lg shadow-lg shadow-emerald-500/20">⚡</div>
+          <span class="font-black text-lg tracking-wider bg-gradient-to-r from-white via-slate-200 to-emerald-400 bg-clip-text text-transparent">SHIPLUS</span>
+        </div>
+        <div class="flex items-center gap-2.5">
+          <div id="adminNavContainer" class="hidden">
+            <button onclick="toggleAdminView()" id="toggleAdminBtn" class="text-xs bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3 py-2 rounded-xl font-bold transition flex items-center gap-1.5">
+              <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> Admin Console
+            </button>
+          </div>
+          <button onclick="handleLogout()" class="text-xs bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500 hover:text-white font-bold px-3.5 py-2 rounded-xl transition flex items-center gap-1.5">
+            <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Logout
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- NAVIGATION DESIGN (TABS) -->
+    <nav class="sticky top-16 z-20 bg-slate-950/90 backdrop-blur-md border-b border-slate-900 px-4 py-3">
+      <div class="max-w-4xl mx-auto flex gap-2.5 overflow-x-auto no-scrollbar">
+        <button onclick="switchTab('dashboard')" id="navBtn-dashboard" class="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-extrabold bg-emerald-600 text-white transition-all shadow-lg shadow-emerald-600/20 shrink-0">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+        </button>
+        <button onclick="switchTab('vip')" id="navBtn-vip" class="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-extrabold bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-900 transition shrink-0 border border-slate-800/80">
+          <i data-lucide="zap" class="w-4 h-4"></i> VIP Plans
+        </button>
+        <button onclick="switchTab('team')" id="navBtn-team" class="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-extrabold bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-900 transition shrink-0 border border-slate-800/80">
+          <i data-lucide="users" class="w-4 h-4"></i> Team & Referral
+        </button>
+        <button onclick="switchTab('account')" id="navBtn-account" class="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-extrabold bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-900 transition shrink-0 border border-slate-800/80">
+          <i data-lucide="landmark" class="w-4 h-4"></i> Account & Bank
+        </button>
+        <button onclick="switchTab('history')" id="navBtn-history" class="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-extrabold bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-900 transition shrink-0 border border-slate-800/80">
+          <i data-lucide="history" class="w-4 h-4"></i> Transactions
+        </button>
+      </div>
+    </nav>
+
+    <!-- MAIN DASHBOARD CONTENT -->
+    <main class="max-w-4xl mx-auto px-4 py-6 space-y-6 pb-28">
+
+      <!-- ================= TAB: USER DASHBOARD ================= -->
+      <div id="tabContent-dashboard" class="space-y-6">
+
+        <!-- ACCOUNT BALANCE CARD -->
+        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-950 via-slate-900 to-slate-950 border border-emerald-500/30 p-6 sm:p-8 shadow-2xl shadow-emerald-950/30">
+          <div class="absolute -right-12 -bottom-12 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+          
+          <div class="relative z-10 flex flex-col md:flex-row justify-between md:items-center gap-5">
+            <div>
+              <span class="text-[11px] font-extrabold uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">Total Account Balance</span>
+              <div class="text-3xl sm:text-5xl font-black text-white mt-3 tracking-tight" id="userBalance">₦1,000.00</div>
+              <p class="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                Logged in as: <span id="userEmailDisplay" class="text-slate-200 font-semibold">user</span>
+              </p>
+            </div>
+            <button onclick="claimDailyCheckin()" id="checkinBtn" class="bg-gradient-to-r from-emerald-400 to-green-500 hover:from-emerald-300 hover:to-green-400 text-slate-950 font-black px-6 py-3.5 rounded-2xl shadow-xl shadow-emerald-500/20 transition-all transform active:scale-95 flex items-center justify-center gap-2 text-xs">
+              <i data-lucide="calendar-check" class="w-4 h-4"></i>
+              <span>Daily Check-in (+₦50)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- REDEEM GIFT CODE SECTION -->
+        <section class="bg-slate-900/80 backdrop-blur border border-slate-800/80 rounded-3xl p-6 shadow-xl space-y-3">
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+            <i data-lucide="gift" class="w-4 h-4 text-emerald-400"></i> Redeem Daily Gift Code
+          </h3>
+          <div class="flex gap-2.5">
+            <input type="text" id="giftCodeInput" placeholder="Enter Gift Code (e.g. SHIPLUS500)" class="flex-1 bg-slate-950 border border-slate-800/80 rounded-2xl px-4 py-3 text-xs text-white uppercase tracking-wider focus:border-emerald-500 focus:outline-none transition" />
+            <button onclick="redeemGiftCode()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold px-5 py-3 rounded-2xl transition shadow-md shadow-emerald-600/20 shrink-0">
+              Redeem Code
+            </button>
+          </div>
+        </section>
+
+        <!-- ACTIVE INVESTMENTS SUMMARY (AUTOMATIC DAILY INCOME) -->
+        <section class="bg-slate-900/80 backdrop-blur border border-slate-800/80 rounded-3xl p-6 shadow-xl space-y-4">
+          <div class="flex justify-between items-center">
+            <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+              <i data-lucide="clock" class="w-4 h-4 text-emerald-400"></i> Active Investments & Automatic Earnings
+            </h3>
+            <span class="text-[10px] bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full font-extrabold border border-emerald-500/20 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Auto-Dropping
+            </span>
+          </div>
+          <div id="activeInvestmentsList" class="space-y-3 text-xs"></div>
+        </section>
+
+        <!-- QUICK ACTION BUTTONS -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <button onclick="openModal('depositModal')" class="flex flex-col items-center justify-center p-5 bg-slate-900/80 hover:bg-slate-900 border border-slate-800/80 hover:border-emerald-500/40 rounded-3xl transition-all shadow-lg group">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-all duration-300">
+              <i data-lucide="arrow-down-left" class="w-5 h-5"></i>
+            </div>
+            <span class="text-xs font-extrabold text-slate-200">Deposit (Min ₦3,800)</span>
+          </button>
+
+          <button onclick="openWithdrawModal()" class="flex flex-col items-center justify-center p-5 bg-slate-900/80 hover:bg-slate-900 border border-slate-800/80 hover:border-emerald-500/40 rounded-3xl transition-all shadow-lg group">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-all duration-300">
+              <i data-lucide="arrow-up-right" class="w-5 h-5"></i>
+            </div>
+            <span class="text-xs font-extrabold text-slate-200">Withdraw</span>
+          </button>
+
+          <a href="https://t.me/+5cxZNXcGRmo5NWJk" target="_blank" class="flex flex-col items-center justify-center p-5 bg-slate-900/80 hover:bg-slate-900 border border-slate-800/80 hover:border-emerald-500/40 rounded-3xl transition-all shadow-lg group">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-all duration-300">
+              <i data-lucide="users" class="w-5 h-5"></i>
+            </div>
+            <span class="text-xs font-extrabold text-slate-200">Join Group</span>
+          </a>
+
+          <a href="https://t.me/shiplusfastchargingcustomersuppo" target="_blank" class="flex flex-col items-center justify-center p-5 bg-slate-900/80 hover:bg-slate-900 border border-slate-800/80 hover:border-emerald-500/40 rounded-3xl transition-all shadow-lg group">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-all duration-300">
+              <i data-lucide="headphones" class="w-5 h-5"></i>
+            </div>
+            <span class="text-xs font-extrabold text-slate-200">Support</span>
+          </a>
+        </div>
+
+      </div>
+
+      <!-- ================= TAB: VIP INVESTMENT PLANS ================= -->
+      <div id="tabContent-vip" class="hidden space-y-6">
+        <div class="flex justify-between items-center mb-2">
+          <div>
+            <h2 class="text-lg sm:text-xl font-black text-white flex items-center gap-2">
+              <i data-lucide="zap" class="w-5 h-5 text-emerald-400"></i> VIP Fast Charger Plans
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">Automated 24H returns over 40 days</p>
+          </div>
+          <span class="text-xs bg-emerald-500/10 text-emerald-400 font-extrabold px-3 py-1 rounded-full border border-emerald-500/20">40-Day Duration</span>
+        </div>
+        <div id="vipGrid" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
+      </div>
+
+      <!-- ================= TAB: TEAM & REFERRALS ================= -->
+      <div id="tabContent-team" class="hidden space-y-6">
+        <section class="bg-slate-900/80 backdrop-blur border border-slate-800/80 rounded-3xl p-6 shadow-xl space-y-4">
+          <h3 class="text-sm font-black text-white flex items-center gap-2">
+            <i data-lucide="share-2" class="w-4 h-4 text-emerald-400"></i> Referral Network
+          </h3>
+          <p class="text-xs text-slate-400">Earn Level 1 (25%), Level 2 (2%), Level 3 (1%), and Level 4 (1%) commissions instantly upon purchase.</p>
+          
+          <div class="bg-slate-950 p-3.5 rounded-2xl border border-slate-800/80 flex items-center justify-between gap-3">
+            <span id="refLink" class="text-xs text-slate-300 truncate font-mono">https://shiplus.onrender.com/?ref=user@example.com</span>
+            <button onclick="copyReferralLink()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-md shrink-0">Copy</button>
+          </div>
+        </section>
+
+        <!-- TEAM MEMBERS SUMMARY & LEVEL SELECTOR -->
+        <section class="bg-slate-900/80 backdrop-blur border border-slate-800/80 rounded-3xl p-6 shadow-xl space-y-5">
+          <div class="flex justify-between items-center">
+            <h3 class="text-sm font-black text-white flex items-center gap-2">
+              <i data-lucide="users" class="w-4 h-4 text-emerald-400"></i> Total Team Members (<span id="teamTotalCounter">0</span>)
+            </h3>
+          </div>
+
+          <!-- LEVEL TABS -->
+          <div class="flex gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800/80 text-center">
+            <button onclick="switchTeamLevel(1)" id="teamLevelBtn-1" class="flex-1 py-2.5 text-xs font-black rounded-xl transition-all bg-emerald-600 text-white shadow-md">Lvl 1 (25%)</button>
+            <button onclick="switchTeamLevel(2)" id="teamLevelBtn-2" class="flex-1 py-2.5 text-xs font-black rounded-xl transition-all bg-slate-950 text-slate-400 hover:text-white border border-slate-800/80">Lvl 2 (2%)</button>
+            <button onclick="switchTeamLevel(3)" id="teamLevelBtn-3" class="flex-1 py-2.5 text-xs font-black rounded-xl transition-all bg-slate-950 text-slate-400 hover:text-white border border-slate-800/80">Lvl 3 (1%)</button>
+            <button onclick="switchTeamLevel(4)" id="teamLevelBtn-4" class="flex-1 py-2.5 text-xs font-black rounded-xl transition-all bg-slate-950 text-slate-400 hover:text-white border border-slate-800/80">Lvl 4 (1%)</button>
+          </div>
+
+          <div class="space-y-3 pt-1">
+            <div class="flex justify-between items-center text-xs text-slate-400 px-1 font-semibold">
+              <span>Downline Network</span>
+              <span id="teamCountBadge-1" class="text-emerald-400 font-extrabold">0 Members</span>
+            </div>
+
+            <div id="teamLevelList-1" class="space-y-2.5"></div>
+            <div id="teamLevelList-2" class="space-y-2.5 hidden"></div>
+            <div id="teamLevelList-3" class="space-y-2.5 hidden"></div>
+            <div id="teamLevelList-4" class="space-y-2.5 hidden"></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- ================= TAB: ACCOUNT & BANK BINDING ================= -->
+      <div id="tabContent-account" class="hidden space-y-6">
+        <section class="bg-slate-900/80 backdrop-blur border border-slate-800/80 rounded-3xl p-6 shadow-xl space-y-4">
+          <h3 class="text-sm font-black text-white flex items-center gap-2">
+            <i data-lucide="landmark" class="w-4 h-4 text-emerald-400"></i> Bind Withdrawal Bank Account
+          </h3>
+          <p class="text-xs text-slate-400">Ensure your bank details match your account profile to prevent payout delays.</p>
+          
+          <div class="space-y-3.5">
+            <div>
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Bank Name</label>
+              <input type="text" id="bindBankName" placeholder="e.g. OPay, Moniepoint, Access Bank" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3.5 text-xs text-white focus:border-emerald-500 focus:outline-none transition" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Account Number</label>
+              <input type="text" id="bindAccountNo" maxlength="10" placeholder="0123456789" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3.5 text-xs text-white focus:border-emerald-500 focus:outline-none transition" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Account Holder Name</label>
+              <input type="text" id="bindAccountName" placeholder="Full name matching your bank" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3.5 text-xs text-white focus:border-emerald-500 focus:outline-none transition" />
+            </div>
+            <button onclick="saveBankBinding()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3.5 rounded-2xl transition shadow-lg shadow-emerald-600/20 text-xs">
+              Save / Update Bank Account
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <!-- ================= TAB: TRANSACTIONS HISTORY ================= -->
+      <div id="tabContent-history" class="hidden space-y-6">
+        <section class="bg-slate-900/80 backdrop-blur border border-slate-800/80 rounded-3xl p-6 shadow-xl">
+          <h3 class="text-sm font-black text-white mb-4 flex items-center gap-2">
+            <i data-lucide="history" class="w-4 h-4 text-emerald-400"></i> Transaction History
+          </h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] tracking-wider">
+                <tr>
+                  <th class="p-3">Type</th>
+                  <th class="p-3">Amount</th>
+                  <th class="p-3">Status</th>
+                  <th class="p-3">Date</th>
+                </tr>
+              </thead>
+              <tbody id="userTxTable" class="divide-y divide-slate-800/50"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- ================= ADMIN DASHBOARD VIEW (STRICTLY OMOOPEOLA1@GMAIL.COM) ================= -->
+      <div id="adminView" class="hidden space-y-6">
+        <div class="bg-amber-500/10 border border-amber-500/30 rounded-3xl p-5 flex items-center justify-between">
+          <div>
+            <h2 class="text-base font-black text-amber-400">Shiplus Admin Console</h2>
+            <p class="text-xs text-slate-300 mt-0.5">Authorized Admin: omoopeola1@gmail.com</p>
+          </div>
+          <span class="bg-amber-500 text-slate-950 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">SECURE ADMIN</span>
+        </div>
+
+        <!-- PLATFORM PROFILES TABLE -->
+        <section class="bg-slate-900/80 backdrop-blur border border-slate-800/80 rounded-3xl p-6 shadow-xl space-y-4">
+          <h3 class="text-sm font-black text-white">Platform Database Profiles</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-800 text-[11px] text-slate-400 uppercase tracking-wider">
+                  <th class="p-3 font-bold">Email / Name</th>
+                  <th class="p-3 font-bold">Balance</th>
+                  <th class="p-3 font-bold">Investment</th>
+                </tr>
+              </thead>
+              <tbody id="adminUsersTable" class="divide-y divide-slate-800/60 text-xs"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- MANUAL USER CREDITING -->
+        <section class="bg-slate-900/80 backdrop-blur border border-slate-800/80 rounded-3xl p-6 shadow-xl space-y-4">
+          <h3 class="text-sm font-black text-white flex items-center gap-2">
+            <i data-lucide="wallet" class="w-4 h-4 text-emerald-400"></i> Manual User Crediting
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">User Email</label>
+              <input type="email" id="adminCreditEmail" placeholder="user@example.com" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs text-white focus:border-emerald-500 focus:outline-none transition" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Credit Amount (₦)</label>
+              <input type="number" id="adminCreditAmount" placeholder="5000" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs text-white focus:border-emerald-500 focus:outline-none transition" />
+            </div>
+          </div>
+          <button onclick="adminManualCredit()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold px-5 py-3 rounded-2xl transition shadow-md">
+            Credit User Account
+          </button>
+        </section>
+
+        <!-- GIFT CODE GENERATOR -->
+        <section class="bg-slate-900/80 backdrop-blur border border-slate-800/80 rounded-3xl p-6 shadow-xl space-y-4">
+          <h3 class="text-sm font-black text-white flex items-center gap-2">
+            <i data-lucide="gift" class="w-4 h-4 text-emerald-400"></i> Generate Daily Gift Code
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            <div>
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Code Name</label>
+              <input type="text" id="adminCodeName" placeholder="e.g. BONUS500" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs text-white uppercase focus:border-emerald-500 focus:outline-none transition" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Cash Value (₦)</label>
+              <input type="number" id="adminCodeAmount" placeholder="500" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs text-white focus:border-emerald-500 focus:outline-none transition" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Max Redemptions (Qty)</label>
+              <input type="number" id="adminCodeQty" placeholder="50" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs text-white focus:border-emerald-500 focus:outline-none transition" />
+            </div>
+          </div>
+          <button onclick="createGiftCode()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold px-5 py-3 rounded-2xl transition shadow-md">
+            Create Gift Code
+          </button>
+
+          <div class="pt-3">
+            <h4 class="text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-2.5">Active Created Codes</h4>
+            <div id="adminGiftCodesList" class="space-y-2 text-xs"></div>
+          </div>
+        </section>
+
+        <!-- PENDING TRANSACTIONS -->
+        <section class="bg-slate-900/80 backdrop-blur border border-slate-800/80 rounded-3xl p-6 shadow-xl">
+          <h3 class="text-sm font-black text-white mb-4">Pending User Transactions</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] tracking-wider">
+                <tr>
+                  <th class="p-3">User</th>
+                  <th class="p-3">Type</th>
+                  <th class="p-3">Amount</th>
+                  <th class="p-3">Net Payout</th>
+                  <th class="p-3">Action</th>
+                </tr>
+              </thead>
+              <tbody id="adminTxTable" class="divide-y divide-slate-800/50"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+    </main>
+
+    <!-- BOTTOM NAVIGATION BAR -->
+    <div class="fixed bottom-0 left-0 right-0 z-40 bg-slate-900/90 backdrop-blur-xl border-t border-slate-800/80 px-4 py-2.5">
+      <div class="max-w-md mx-auto grid grid-cols-4 text-center">
+        <button onclick="switchTab('dashboard')" id="bottomNav-dashboard" class="flex flex-col items-center text-emerald-400 py-1 transition transform active:scale-95">
+          <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+          <span class="text-[10px] font-black mt-1">Home</span>
+        </button>
+        <button onclick="switchTab('vip')" id="bottomNav-vip" class="flex flex-col items-center text-slate-400 hover:text-white py-1 transition transform active:scale-95">
+          <i data-lucide="zap" class="w-5 h-5"></i>
+          <span class="text-[10px] font-black mt-1">VIP Plans</span>
+        </button>
+        <button onclick="switchTab('team')" id="bottomNav-team" class="flex flex-col items-center text-slate-400 hover:text-white py-1 transition transform active:scale-95">
+          <i data-lucide="users" class="w-5 h-5"></i>
+          <span class="text-[10px] font-black mt-1">Team</span>
+        </button>
+        <button onclick="switchTab('account')" id="bottomNav-account" class="flex flex-col items-center text-slate-400 hover:text-white py-1 transition transform active:scale-95">
+          <i data-lucide="user-cog" class="w-5 h-5"></i>
+          <span class="text-[10px] font-black mt-1">Account</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- WELCOME POPUP MODAL -->
+  <div id="welcomeModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-emerald-500/30 rounded-3xl max-w-sm w-full p-6 sm:p-8 text-center shadow-2xl relative overflow-hidden">
+      <div class="w-16 h-16 bg-gradient-to-tr from-emerald-500 to-green-400 text-slate-950 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-emerald-500/30 text-2xl font-black">
+        ⚡
+      </div>
+      <h3 class="text-xl font-black text-white mb-2">Welcome to Shiplus!</h3>
+      <p class="text-xs text-slate-300 mb-6 leading-relaxed">You have received a <strong class="text-emerald-400 font-extrabold">₦1,000 Sign-up Bonus</strong>. Join our official Telegram group for updates, support, and daily gift codes!</p>
+      
+      <div class="space-y-2.5">
+        <a href="https://t.me/+5cxZNXcGRmo5NWJk" target="_blank" onclick="closeModal('welcomeModal')" class="block w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3.5 rounded-2xl shadow-lg shadow-emerald-600/30 transition text-xs">
+          Join Telegram Group
+        </a>
+        <button onclick="closeModal('welcomeModal')" class="block w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-2xl transition text-xs">
+          Continue to Platform
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEPOSIT MODAL (MINIMUM ₦3,800) -->
+  <div id="depositModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-5">
+      <div class="flex justify-between items-center">
+        <h3 class="font-black text-white text-base">Deposit Funds</h3>
+        <button onclick="closeModal('depositModal')" class="text-slate-400 hover:text-white bg-slate-800/80 w-8 h-8 rounded-full flex items-center justify-center">&times;</button>
+      </div>
+
+      <div class="bg-slate-950 p-4 rounded-2xl border border-emerald-500/30 space-y-2.5">
+        <div class="text-[10px] text-emerald-400 font-black uppercase tracking-wider">Official Payment Account</div>
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-slate-400">Bank:</span>
+          <span class="font-bold text-white">Moniepoint</span>
+        </div>
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-slate-400">Account Name:</span>
+          <span class="font-bold text-white">Eto Eno</span>
+        </div>
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-slate-400">Account No:</span>
+          <div class="flex items-center gap-1.5">
+            <span class="text-sm font-black text-emerald-400 font-mono">5112715845</span>
+            <button onclick="copyAccountDetails()" class="text-[10px] bg-emerald-600 text-white px-2.5 py-1 rounded-lg font-bold shadow">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Amount Transferred (Min: ₦3,800)</label>
+        <input type="number" id="depositAmount" placeholder="e.g. 3800" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3.5 text-sm text-white focus:border-emerald-500 focus:outline-none transition" />
+      </div>
+      
+      <button onclick="submitDeposit()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3.5 rounded-2xl shadow-lg shadow-emerald-600/20 transition text-xs">
+        I Have Paid - Submit Request
+      </button>
+    </div>
+  </div>
+
+  <!-- WITHDRAW MODAL -->
+  <div id="withdrawModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-5">
+      <div class="flex justify-between items-center">
+        <h3 class="font-black text-white text-base">Request Withdrawal</h3>
+        <button onclick="closeModal('withdrawModal')" class="text-slate-400 hover:text-white bg-slate-800/80 w-8 h-8 rounded-full flex items-center justify-center">&times;</button>
+      </div>
+      <div class="text-xs bg-emerald-950/40 border border-emerald-500/20 p-4 rounded-2xl space-y-1.5 text-slate-300">
+        <p>• Window: <strong class="text-white">9:00 AM – 5:00 PM (WAT)</strong></p>
+        <p>• Fee: <strong class="text-white">15%</strong> | Limits: <strong class="text-white">₦1,000 – ₦50,000</strong></p>
+        <p class="text-emerald-400 font-bold pt-1">• Bound Bank: <span id="modalBoundBankInfo" class="text-white">Not Bound</span></p>
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Amount to Withdraw (₦)</label>
+        <input type="number" id="withdrawAmount" placeholder="e.g. 5000" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3.5 text-sm text-white focus:border-emerald-500 focus:outline-none transition" />
+      </div>
+      <button onclick="submitWithdrawal()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3.5 rounded-2xl shadow-lg shadow-emerald-600/20 transition text-xs">
+        Submit Withdrawal Request
+      </button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shiplus - Premier Investment Platform</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase JS Client SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d'
+            }
+          }
+        }
+      }
+    }
+  </script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans pb-24">
 
