@@ -11,9 +11,6 @@ try {
   console.warn('Supabase initialization failed.');
 }
 
-// ==========================================
-// MULTI-ADMIN CONFIGURATION
-// ==========================================
 const ADMIN_EMAILS = [
   'omoopeola1@gmail.com',
   'wisdomwhite086@gmail.com'
@@ -446,33 +443,69 @@ async function render() {
       }
     }
 
-    document.getElementById('adminUsersTable').innerHTML = state.allUsersList.map(u => {
-      const userInvTxs = (state.transactions || []).filter(t => t.user_email.toLowerCase() === u.email.toLowerCase() && t.type.startsWith('Invest:') && t.status === 'Completed');
-      const totalInvested = userInvTxs.reduce((sum, t) => sum + Number(t.amount), 0);
-      const bankInfo = u.bank_account ? `${u.bank_account.bankName} (${u.bank_account.accountNo})` : 'Not Bound';
+    renderAdminUsers();
+
+    // Render Pending Transactions with the User's Bound Bank Details explicitly shown
+    document.getElementById('adminTxTable').innerHTML = state.transactions.filter(t => t.status === 'Pending').map(tx => {
+      const txUser = state.allUsersList.find(u => u.email.toLowerCase() === tx.user_email.toLowerCase());
+      let bankDetailsHtml = '<span class="text-rose-500 italic text-[10px]">Bank Not Bound</span>';
+      
+      if (txUser && txUser.bank_account) {
+        bankDetailsHtml = `
+          <div class="text-[11px] text-slate-700 font-semibold mt-0.5">
+            🏦 <span class="text-emerald-700 font-bold">${txUser.bank_account.bankName}</span> — 
+            <span class="font-mono text-slate-900">${txUser.bank_account.accountNo}</span> 
+            (<span class="uppercase text-[10px] text-slate-600">${txUser.bank_account.accountName}</span>)
+          </div>
+        `;
+      }
 
       return `
         <tr>
-          <td class="p-2.5 text-slate-800 font-semibold">${u.email}</td>
-          <td class="p-2.5 text-emerald-600 font-bold">₦${Number(u.balance || 0).toLocaleString()}</td>
-          <td class="p-2.5 text-slate-900 font-black">₦${totalInvested.toLocaleString()}</td>
-          <td class="p-2.5 text-slate-500 text-[10px]">${bankInfo}</td>
+          <td class="p-2.5">
+            <div class="font-bold text-slate-900">${tx.user_email}</div>
+            ${bankDetailsHtml}
+          </td>
+          <td class="p-2.5 text-slate-600">${tx.type}</td>
+          <td class="p-2.5 font-bold text-slate-900">₦${Number(tx.amount).toLocaleString()}</td>
+          <td class="p-2.5 space-x-1">
+            <button onclick="processAdminTx('${tx.id}', 'Approve')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold shadow">Approve</button>
+            <button onclick="processAdminTx('${tx.id}', 'Reject')" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold shadow">Reject</button>
+          </td>
         </tr>
       `;
     }).join('');
-
-    document.getElementById('adminTxTable').innerHTML = state.transactions.filter(t => t.status === 'Pending').map(tx => `
-      <tr>
-        <td class="p-2">${tx.user_email}</td>
-        <td class="p-2">${tx.type}</td>
-        <td class="p-2 font-bold">₦${Number(tx.amount).toLocaleString()}</td>
-        <td class="p-2 space-x-1">
-          <button onclick="processAdminTx('${tx.id}', 'Approve')" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold">Approve</button>
-          <button onclick="processAdminTx('${tx.id}', 'Reject')" class="bg-rose-600 text-white px-2 py-1 rounded text-[10px] font-bold">Reject</button>
-        </td>
-      </tr>
-    `).join('');
   }
+}
+
+function renderAdminUsers() {
+  const searchInput = document.getElementById('adminUserSearch');
+  const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+  
+  const filteredUsers = state.allUsersList.filter(u => u.email.toLowerCase().includes(query));
+
+  const tableBody = document.getElementById('adminUsersTable');
+  if (!tableBody) return;
+
+  if (filteredUsers.length === 0) {
+    tableBody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-slate-400 italic">No members found.</td></tr>`;
+    return;
+  }
+
+  tableBody.innerHTML = filteredUsers.map(u => {
+    const userInvTxs = (state.transactions || []).filter(t => t.user_email.toLowerCase() === u.email.toLowerCase() && t.type.startsWith('Invest:') && t.status === 'Completed');
+    const totalInvested = userInvTxs.reduce((sum, t) => sum + Number(t.amount), 0);
+    const bankInfo = u.bank_account ? `${u.bank_account.bankName} (${u.bank_account.accountNo})` : 'Not Bound';
+
+    return `
+      <tr>
+        <td class="p-2.5 text-slate-800 font-semibold">${u.email}</td>
+        <td class="p-2.5 text-emerald-600 font-bold">₦${Number(u.balance || 0).toLocaleString()}</td>
+        <td class="p-2.5 text-slate-900 font-black">₦${totalInvested.toLocaleString()}</td>
+        <td class="p-2.5 text-slate-500 text-[10px]">${bankInfo}</td>
+      </tr>
+    `;
+  }).join('');
 }
 
 async function saveBankBinding() {
