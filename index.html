@@ -388,9 +388,12 @@
           </button>
         </div>
 
-        <!-- USER PROFILES TABLE (BALANCES & TOTAL INVESTED) -->
+        <!-- USER PROFILES TABLE WITH SEARCH BAR -->
         <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm space-y-3">
-          <h3 class="text-xs font-black text-slate-900">User Profiles (Balances & Total Invested)</h3>
+          <div class="flex justify-between items-center gap-2">
+            <h3 class="text-xs font-black text-slate-900">User Profiles</h3>
+            <input type="text" id="adminUserSearch" oninput="renderAdminUsers()" placeholder="Search member email..." class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs w-44 focus:outline-none focus:border-emerald-500" />
+          </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
               <thead class="bg-slate-50 text-slate-400 uppercase text-[9px]">
@@ -426,13 +429,14 @@
           <div id="adminGiftCodesList" class="space-y-1 text-xs pt-2"></div>
         </div>
 
+        <!-- PENDING TRANSACTIONS WITH BOUND BANK DETAILS -->
         <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm space-y-3">
-          <h3 class="text-xs font-black text-slate-900">Pending Transactions</h3>
+          <h3 class="text-xs font-black text-slate-900">Pending Transactions & Withdrawal Accounts</h3>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
               <thead class="bg-slate-50 text-slate-400 uppercase text-[9px]">
                 <tr>
-                  <th class="p-2">User</th>
+                  <th class="p-2">User / Withdrawal Bank</th>
                   <th class="p-2">Type</th>
                   <th class="p-2">Amount</th>
                   <th class="p-2">Action</th>
