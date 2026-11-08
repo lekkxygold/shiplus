@@ -11,9 +11,6 @@ try {
   console.warn('Supabase initialization failed.');
 }
 
-// ==========================================
-// VIP FAST CHARGER PACKAGES DATA
-// ==========================================
 const VIP_PACKAGES = [
   { id: 1, name: 'Shiplus VIP-1', price: 3800, daily: 800, days: 40, total: 32000, commission: 875, limit: 1, image: 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?auto=format&fit=crop&w=400&q=80' },
   { id: 2, name: 'Shiplus VIP-2', price: 7500, daily: 1350, days: 40, total: 54000, commission: 1875, limit: 1, image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=400&q=80' },
@@ -36,6 +33,7 @@ let state = {
   giftCodes: [],
   allUsersList: [],
   teamLevels: { 1: [], 2: [], 3: [], 4: [] },
+  platformSettings: { minDeposit: 3800, checkinBonus: 50 },
   isAdminView: false
 };
 
@@ -251,9 +249,6 @@ async function showMainApp(isNewUser) {
   if (isNewUser) openModal('welcomeModal');
 }
 
-// ==========================================
-// NAVIGATION TABS (5-ITEM BOTTOM BAR)
-// ==========================================
 function switchTab(tabName) {
   ['dashboard', 'income', 'team', 'share', 'my'].forEach(t => {
     const content = document.getElementById(`tabContent-${t}`);
@@ -298,9 +293,6 @@ function switchTeamLevel(level) {
   });
 }
 
-// ==========================================
-// RENDER UI COMPONENTS
-// ==========================================
 async function render() {
   if (currentUser) {
     await fetchGlobalData();
@@ -314,10 +306,20 @@ async function render() {
     document.getElementById('refLink').textContent = `${window.location.origin}${window.location.pathname}?ref=${currentUser.email}`;
   }
 
-  if (state.user.bankAccount) {
-    document.getElementById('bindBankName').value = state.user.bankAccount.bankName || '';
-    document.getElementById('bindAccountNo').value = state.user.bankAccount.accountNo || '';
+  const unboundView = document.getElementById('bankUnboundView');
+  const boundView = document.getElementById('bankBoundView');
+
+  if (state.user.bankAccount && state.user.bankAccount.bankName) {
+    unboundView.classList.add('hidden');
+    boundView.classList.remove('hidden');
+    document.getElementById('boundBankDisplay').textContent = state.user.bankAccount.bankName;
+    document.getElementById('boundAccNoDisplay').textContent = state.user.bankAccount.accountNo;
+    document.getElementById('boundAccNameDisplay').textContent = state.user.bankAccount.accountName;
     document.getElementById('modalBoundBankInfo').textContent = `${state.user.bankAccount.bankName} (${state.user.bankAccount.accountNo})`;
+  } else {
+    unboundView.classList.remove('hidden');
+    boundView.classList.add('hidden');
+    document.getElementById('modalBoundBankInfo').textContent = 'Not Bound';
   }
 
   const checkinBtn = document.getElementById('checkinBtn');
@@ -329,7 +331,7 @@ async function render() {
   } else {
     checkinBtn.disabled = false;
     checkinBtn.className = 'text-[11px] bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-2 rounded-xl shadow shrink-0';
-    checkinBtn.innerText = 'Check-in (+₦50)';
+    checkinBtn.innerText = `Check-in (+₦${state.platformSettings.checkinBonus})`;
   }
 
   const totalTeamCount = (state.teamLevels[1].length + state.teamLevels[2].length + state.teamLevels[3].length + state.teamLevels[4].length);
@@ -368,7 +370,6 @@ async function render() {
     `).join('');
   }
 
-  // VIP CARDS MATCHING REFERENCE SCREENSHOT
   const vipGrid = document.getElementById('vipGrid');
   vipGrid.innerHTML = VIP_PACKAGES.map(pkg => {
     const userPurchased = (state.user.purchases && state.user.purchases[pkg.id]) || 0;
@@ -376,7 +377,6 @@ async function render() {
 
     return `
       <div class="bg-white border border-emerald-100 rounded-3xl p-4 shadow-sm space-y-3">
-        <!-- Top Pill Header -->
         <div class="flex justify-between items-center bg-slate-50 p-2 rounded-2xl border border-slate-100">
           <div class="flex items-center gap-2">
             <span class="bg-emerald-100 text-emerald-700 text-[10px] font-black px-2.5 py-1 rounded-xl">VIP ${pkg.id}</span>
@@ -385,17 +385,15 @@ async function render() {
           <span class="text-[11px] font-bold text-slate-500 bg-white px-3 py-1 rounded-xl border border-slate-200">Limit: ${userPurchased}/${pkg.limit}</span>
         </div>
 
-        <!-- Inner Content Card -->
         <div class="bg-slate-50/70 border border-emerald-50 rounded-2xl p-3 flex gap-3 items-center">
           <img src="${pkg.image}" alt="${pkg.name}" class="w-20 h-20 object-cover rounded-xl border border-slate-200 shrink-0">
           <div class="flex-1 space-y-1">
             <div class="text-[10px] font-bold text-emerald-600 uppercase">⚡ 45W ULTRA CHARGE</div>
             <h4 class="font-black text-slate-900 text-sm">${pkg.name}</h4>
-            <p class="text-[10px] text-slate-400">Shiplus 45W USB Fast Charger (SH-...</p>
+            <p class="text-[10px] text-slate-400">Shiplus 45W USB Fast Charger</p>
           </div>
         </div>
 
-        <!-- Yield Stats Grid -->
         <div class="grid grid-cols-2 gap-2 text-xs bg-white p-3 rounded-2xl border border-slate-100">
           <div>Daily Income: <strong class="text-slate-900">₦${pkg.daily.toLocaleString()}</strong></div>
           <div>Total Yield: <strong class="text-slate-900">₦${pkg.total.toLocaleString()}</strong></div>
@@ -421,14 +419,24 @@ async function render() {
     </tr>
   `).join('');
 
+  // ADMIN VIEW: SHOWING TOTAL CUMULATIVE INVESTMENTS ACROSS ALL TRANSACTIONS & ACTIVE PLANS
   if (state.isAdminView && currentUser && currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-    document.getElementById('adminUsersTable').innerHTML = state.allUsersList.map(u => `
-      <tr>
-        <td class="p-2 text-slate-800">${u.email}</td>
-        <td class="p-2 text-emerald-600 font-bold">₦${Number(u.balance || 0).toLocaleString()}</td>
-        <td class="p-2 text-slate-600">Active</td>
-      </tr>
-    `).join('');
+    document.getElementById('adminUsersTable').innerHTML = state.allUsersList.map(u => {
+      // Calculate total investments from completed investment transactions for this user
+      const userInvTxs = (state.transactions || []).filter(t => t.user_email.toLowerCase() === u.email.toLowerCase() && t.type.startsWith('Invest:') && t.status === 'Completed');
+      const totalInvested = userInvTxs.reduce((sum, t) => sum + Number(t.amount), 0);
+      
+      const bankInfo = u.bank_account ? `${u.bank_account.bankName} (${u.bank_account.accountNo})` : 'Not Bound';
+
+      return `
+        <tr>
+          <td class="p-2.5 text-slate-800 font-semibold">${u.email}</td>
+          <td class="p-2.5 text-emerald-600 font-bold">₦${Number(u.balance || 0).toLocaleString()}</td>
+          <td class="p-2.5 text-slate-900 font-black">₦${totalInvested.toLocaleString()}</td>
+          <td class="p-2.5 text-slate-500 text-[10px]">${bankInfo}</td>
+        </tr>
+      `;
+    }).join('');
 
     document.getElementById('adminTxTable').innerHTML = state.transactions.filter(t => t.status === 'Pending').map(tx => `
       <tr>
@@ -445,21 +453,44 @@ async function saveBankBinding() {
   const bankName = document.getElementById('bindBankName').value.trim();
   const accountNo = document.getElementById('bindAccountNo').value.trim();
   const accountName = document.getElementById('bindAccountName').value.trim();
-  if (!bankName || accountNo.length < 10) { alert('Enter valid bank info.'); return; }
+  if (!bankName || accountNo.length < 10 || !accountName) { 
+    alert('Please enter valid bank details and a complete 10-digit account number.'); 
+    return; 
+  }
   state.user.bankAccount = { bankName, accountNo, accountName };
   await saveUserProfile();
   render();
-  alert('Bank account successfully saved!');
+  alert('Withdrawal bank account bound successfully!');
+}
+
+function unlockBankEdit() {
+  document.getElementById('bankUnboundView').classList.remove('hidden');
+  document.getElementById('bankBoundView').classList.add('hidden');
+  if (state.user.bankAccount) {
+    document.getElementById('bindBankName').value = state.user.bankAccount.bankName || '';
+    document.getElementById('bindAccountNo').value = state.user.bankAccount.accountNo || '';
+    document.getElementById('bindAccountName').value = state.user.bankAccount.accountName || '';
+  }
+}
+
+async function savePlatformSettings() {
+  const minDep = document.getElementById('settingMinDeposit').value;
+  const chkBonus = document.getElementById('settingCheckin').value;
+  state.platformSettings.minDeposit = parseFloat(minDep) || 3800;
+  state.platformSettings.checkinBonus = parseFloat(chkBonus) || 50;
+  render();
+  alert('Global platform settings saved successfully!');
 }
 
 async function claimDailyCheckin() {
   const today = new Date().toDateString();
-  state.user.balance += 50;
+  const bonus = state.platformSettings.checkinBonus;
+  state.user.balance += bonus;
   state.user.lastCheckin = today;
   await saveUserProfile();
-  await supabaseClient.from('transactions').insert([{ user_email: currentUser.email.toLowerCase(), type: 'Daily Reward', amount: 50, fee: 0, status: 'Completed' }]);
+  await supabaseClient.from('transactions').insert([{ user_email: currentUser.email.toLowerCase(), type: 'Daily Reward', amount: bonus, fee: 0, status: 'Completed' }]);
   render();
-  alert('Success! ₦50 added.');
+  alert(`Success! ₦${bonus} added.`);
 }
 
 async function buyVipPackage(pkgId) {
@@ -487,7 +518,8 @@ async function buyVipPackage(pkgId) {
 
 async function submitDeposit() {
   const amount = parseFloat(document.getElementById('depositAmount').value);
-  if (!amount || amount < 3800) { alert('Minimum deposit is ₦3,800.'); return; }
+  const minDep = state.platformSettings.minDeposit;
+  if (!amount || amount < minDep) { alert(`Minimum deposit is ₦${minDep.toLocaleString()}.`); return; }
   await supabaseClient.from('transactions').insert([{ user_email: currentUser.email.toLowerCase(), type: 'Deposit', amount, fee: 0, status: 'Pending' }]);
   closeModal('depositModal');
   render();
