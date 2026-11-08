@@ -287,7 +287,7 @@
         </div>
       </div>
 
-      <!-- ================= TAB: SHARE (QUICK QR / PROMO) ================= -->
+      <!-- ================= TAB: SHARE ================= -->
       <div id="tabContent-share" class="hidden space-y-4">
         <div class="bg-white border border-slate-100 rounded-2xl p-6 text-center space-y-4 shadow-sm">
           <div class="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto text-3xl font-black">
@@ -301,10 +301,10 @@
         </div>
       </div>
 
-      <!-- ================= TAB: MY (ACCOUNT & BANK BINDING - MATCHING REFERENCE IMAGE) ================= -->
+      <!-- ================= TAB: MY (EXACT REFERENCE SCREENSHOT CARD FOR USERS) ================= -->
       <div id="tabContent-my" class="hidden space-y-4">
         
-        {/* UNBOUND VIEW CONTAINER */}
+        <!-- UNBOUND VIEW -->
         <div id="bankUnboundView" class="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm space-y-4">
           <h3 class="text-xs font-black text-slate-900 flex items-center gap-2">
             <i data-lucide="landmark" class="w-4 h-4 text-emerald-600"></i> Bind Payout Bank Account
@@ -328,7 +328,7 @@
           </div>
         </div>
 
-        {/* BOUND VIEW CONTAINER (MATCHING EXACTLY THE REFERENCE IMAGE WITH DARK THEME CARD) */}
+        <!-- BOUND VIEW (MATCHING THE DARK THEME CARD IN YOUR REFERENCE IMAGE) -->
         <div id="bankBoundView" class="hidden bg-[#18181b] text-white border border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
           <div class="flex justify-between items-center">
             <h3 class="text-base font-black tracking-wide text-white">Withdrawal account</h3>
@@ -358,7 +358,7 @@
 
       </div>
 
-      <!-- ================= ADMIN CONSOLE VIEW (WITH PLATFORM SETTINGS & USER INVESTMENTS) ================= -->
+      <!-- ================= ADMIN CONSOLE VIEW ================= -->
       <div id="adminView" class="hidden space-y-4">
         <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex justify-between items-center">
           <div>
@@ -368,7 +368,7 @@
           <span class="bg-amber-500 text-white text-[9px] font-black px-2.5 py-1 rounded-full">ADMIN</span>
         </div>
 
-        <!-- PLATFORM SETTINGS -->
+        <!-- GLOBAL PLATFORM SETTINGS -->
         <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm space-y-3">
           <h3 class="text-xs font-black text-slate-900 flex items-center gap-1.5">
             <i data-lucide="settings" class="w-4 h-4 text-emerald-600"></i> Global Platform Settings
@@ -388,16 +388,16 @@
           </button>
         </div>
 
-        <!-- PLATFORM PROFILES TABLE WITH BALANCES & INVESTMENTS -->
+        <!-- PROFILES TABLE SHOWING TOTAL CUMULATIVE INVESTMENTS & BALANCES -->
         <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm space-y-3">
-          <h3 class="text-xs font-black text-slate-900">All User Profiles (Balances & Investments)</h3>
+          <h3 class="text-xs font-black text-slate-900">User Profiles (Balances & Total Invested)</h3>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
               <thead class="bg-slate-50 text-slate-400 uppercase text-[9px]">
                 <tr>
                   <th class="p-2.5">User Email</th>
                   <th class="p-2.5">Balance</th>
-                  <th class="p-2.5">Active Investment</th>
+                  <th class="p-2.5">Total Invested</th>
                   <th class="p-2.5">Bound Bank</th>
                 </tr>
               </thead>
@@ -474,18 +474,17 @@
 
   </div>
 
-  <!-- WELCOME MODAL -->
+  <!-- MODALS -->
   <div id="welcomeModal" class="hidden fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-xl space-y-4">
       <div class="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center mx-auto text-2xl font-black shadow-lg shadow-emerald-500/20">⚡</div>
       <h3 class="text-lg font-black text-slate-900">Welcome to Shiplus!</h3>
-      <p class="text-xs text-slate-500">You have received a <strong class="text-emerald-600">₦1,000 Sign-up Bonus</strong>. Join our official Telegram group!</p>
+      <p class="text-xs text-slate-500">You have received a <strong class="text-emerald-600">₦1,000 Sign-up Bonus</strong>.</p>
       <a href="https://t.me/+5cxZNXcGRmo5NWJk" target="_blank" onclick="closeModal('welcomeModal')" class="block w-full bg-emerald-600 text-white font-bold py-3 rounded-xl text-xs">Join Telegram Group</a>
       <button onclick="closeModal('welcomeModal')" class="block w-full bg-slate-100 text-slate-600 font-bold py-2.5 rounded-xl text-xs">Continue</button>
     </div>
   </div>
 
-  <!-- DEPOSIT MODAL -->
   <div id="depositModal" class="hidden fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-xl space-y-4">
       <div class="flex justify-between items-center">
@@ -501,14 +500,13 @@
         </div>
       </div>
       <div>
-        <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Amount Transferred (Min ₦3,800)</label>
+        <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Amount Transferred</label>
         <input type="number" id="depositAmount" placeholder="3800" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs" />
       </div>
       <button onclick="submitDeposit()" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl text-xs">I Have Paid - Submit</button>
     </div>
   </div>
 
-  <!-- WITHDRAW MODAL -->
   <div id="withdrawModal" class="hidden fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-xl space-y-4">
       <div class="flex justify-between items-center">
@@ -517,7 +515,7 @@
       </div>
       <div class="text-[11px] bg-slate-50 p-3 rounded-2xl border border-slate-200 text-slate-600 space-y-1">
         <p>• Window: <strong class="text-slate-900">9:00 AM – 5:00 PM</strong></p>
-        <p>• Fee: <strong class="text-slate-900">15%</strong> | Limits: <strong class="text-slate-900">₦1,000 – ₦50,000</strong></p>
+        <p>• Fee: <strong class="text-slate-900">15%</strong></p>
         <p class="text-emerald-600 font-semibold">• Bound Bank: <span id="modalBoundBankInfo">Not Bound</span></p>
       </div>
       <div>
