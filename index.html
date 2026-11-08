@@ -239,17 +239,32 @@
           </div>
         </section>
 
-        <!-- TEAM MEMBERS SUMMARY & LIST -->
+        <!-- TEAM MEMBERS SUMMARY & LEVEL SELECTOR -->
         <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
           <div class="flex justify-between items-center">
             <h3 class="text-sm font-bold text-white flex items-center gap-2">
-              <i data-lucide="users" class="w-4 h-4 text-emerald-400"></i> Team Members (<span id="teamMembersCount">0</span>)
+              <i data-lucide="users" class="w-4 h-4 text-emerald-400"></i> Total Team Members (<span id="teamTotalCounter">0</span>)
             </h3>
           </div>
 
+          <!-- LEVEL TABS -->
+          <div class="flex gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-center">
+            <button onclick="switchTeamLevel(1)" id="teamLevelBtn-1" class="flex-1 py-2 text-xs font-bold rounded-lg transition bg-emerald-600 text-white shadow">Lvl 1 (25%)</button>
+            <button onclick="switchTeamLevel(2)" id="teamLevelBtn-2" class="flex-1 py-2 text-xs font-bold rounded-lg transition bg-slate-950 text-slate-400 hover:text-white border border-slate-800">Lvl 2 (2%)</button>
+            <button onclick="switchTeamLevel(3)" id="teamLevelBtn-3" class="flex-1 py-2 text-xs font-bold rounded-lg transition bg-slate-950 text-slate-400 hover:text-white border border-slate-800">Lvl 3 (1%)</button>
+            <button onclick="switchTeamLevel(4)" id="teamLevelBtn-4" class="flex-1 py-2 text-xs font-bold rounded-lg transition bg-slate-950 text-slate-400 hover:text-white border border-slate-800">Lvl 4 (1%)</button>
+          </div>
+
           <div class="space-y-2 pt-2">
-            <h4 class="text-xs font-bold text-slate-300">Level 1 Directs (25% Investment Commission)</h4>
-            <div id="teamReferralsList" class="space-y-2"></div>
+            <div class="flex justify-between items-center text-xs text-slate-400 px-1">
+              <span>Members List</span>
+              <span id="teamCountBadge-1" class="text-emerald-400 font-bold">0 Members</span>
+            </div>
+
+            <div id="teamLevelList-1" class="space-y-2"></div>
+            <div id="teamLevelList-2" class="space-y-2 hidden"></div>
+            <div id="teamLevelList-3" class="space-y-2 hidden"></div>
+            <div id="teamLevelList-4" class="space-y-2 hidden"></div>
           </div>
         </section>
       </div>
