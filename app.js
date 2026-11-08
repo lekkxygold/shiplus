@@ -44,7 +44,7 @@ let state = {
   allInvestments: [],
   giftCodes: [],
   allUsersList: [],
-  teamReferrals: [],
+  teamLevels: { 1: [], 2: [], 3: [], 4: [] },
   isAdminView: false
 };
 
@@ -86,11 +86,8 @@ async function loadUserData(email) {
   const { data: invs } = await supabaseClient.from('active_investments').select('*').eq('user_email', cleanEmail);
   state.activeInvestments = invs || [];
 
-  // Fetch team referrals matching inviter email case-insensitively
-  const { data: team } = await supabaseClient.from('profiles').select('*').eq('inviter', cleanEmail);
-  state.teamReferrals = team || [];
-
   await fetchGlobalData();
+  await computeTeamLevels(cleanEmail);
 }
 
 async function fetchGlobalData() {
@@ -107,6 +104,28 @@ async function fetchGlobalData() {
 
   const { data: allInvs } = await supabaseClient.from('active_investments').select('*');
   state.allInvestments = allInvs || [];
+}
+
+async function computeTeamLevels(userEmail) {
+  if (!state.allUsersList || state.allUsersList.length === 0) return;
+  
+  let level1 = state.allUsersList.filter(u => u.inviter && u.inviter.toLowerCase() === userEmail);
+  let level1Emails = level1.map(u => u.email.toLowerCase());
+
+  let level2 = state.allUsersList.filter(u => u.inviter && level1Emails.includes(u.inviter.toLowerCase()));
+  let level2Emails = level2.map(u => u.email.toLowerCase());
+
+  let level3 = state.allUsersList.filter(u => u.inviter && level2Emails.includes(u.inviter.toLowerCase()));
+  let level3Emails = level3.map(u => u.email.toLowerCase());
+
+  let level4 = state.allUsersList.filter(u => u.inviter && level3Emails.includes(u.inviter.toLowerCase()));
+
+  state.teamLevels = {
+    1: level1,
+    2: level2,
+    3: level3,
+    4: level4
+  };
 }
 
 async function saveUserProfile() {
@@ -288,6 +307,7 @@ async function showMainApp(isNewUser) {
   }
 
   await fetchGlobalData();
+  if (currentUser) await computeTeamLevels(currentUser.email.toLowerCase());
   await checkAndProcessAutomaticIncome();
   render();
 
@@ -336,12 +356,34 @@ function switchTab(tabName) {
 }
 
 // ==========================================
+// TEAM SUB-TAB SWITCHING (LEVEL 1 TO 4)
+// ==========================================
+function switchTeamLevel(level) {
+  [1, 2, 3, 4].forEach(lvl => {
+    const listEl = document.getElementById(`teamLevelList-${lvl}`);
+    const btnEl = document.getElementById(`teamLevelBtn-${lvl}`);
+    if (listEl) {
+      if (lvl === level) listEl.classList.remove('hidden');
+      else listEl.classList.add('hidden');
+    }
+    if (btnEl) {
+      if (lvl === level) {
+        btnEl.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition bg-emerald-600 text-white shadow';
+      } else {
+        btnEl.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition bg-slate-950 text-slate-400 hover:text-white border border-slate-800';
+      }
+    }
+  });
+}
+
+// ==========================================
 // RENDER FUNCTIONS
 // ==========================================
 async function render() {
   if (currentUser) {
     await fetchGlobalData();
     await loadUserData(currentUser.email);
+    await computeTeamLevels(currentUser.email.toLowerCase());
   }
 
   document.getElementById('userBalance').textContent = `₦${(state.user.balance || 0).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
@@ -373,35 +415,40 @@ async function render() {
     lucide.createIcons();
   }
 
-  // Render Team Referrals List matching reference card style
-  const teamListContainer = document.getElementById('teamReferralsList');
-  if (teamListContainer) {
-    const team = state.teamReferrals || [];
+  // Render Multi-Level Team Lists
+  const totalTeamCount = (state.teamLevels[1].length + state.teamLevels[2].length + state.teamLevels[3].length + state.teamLevels[4].length);
+  const teamTotalCounter = document.getElementById('teamTotalCounter');
+  if (teamTotalCounter) teamTotalCounter.textContent = totalTeamCount;
+
+  [1, 2, 3, 4].forEach(lvl => {
+    const container = document.getElementById(`teamLevelList-${lvl}`);
+    const badgeCount = document.getElementById(`teamCountBadge-${lvl}`);
+    const members = state.teamLevels[lvl] || [];
     
-    // Update team members count header if present
-    const teamHeader = document.getElementById('teamMembersCount');
-    if (teamHeader) teamHeader.textContent = team.length;
+    if (badgeCount) badgeCount.textContent = `${members.length} Members`;
 
-    if (team.length === 0) {
-      teamListContainer.innerHTML = `<p class="text-slate-500 italic text-xs">No team referrals yet. Share your referral link to build your team!</p>`;
-    } else {
-      teamListContainer.innerHTML = team.map(member => {
-        const memberInvs = (state.allInvestments || []).filter(i => i.user_email.toLowerCase() === member.email.toLowerCase());
-        const hasActiveInv = memberInvs.length > 0;
-        const totalMemberInv = memberInvs.reduce((sum, inv) => sum + Number(inv.price), 0);
+    if (container) {
+      if (members.length === 0) {
+        container.innerHTML = `<p class="text-slate-500 italic text-xs py-2">No members in Level ${lvl} yet.</p>`;
+      } else {
+        container.innerHTML = members.map(member => {
+          const memberInvs = (state.allInvestments || []).filter(i => i.user_email.toLowerCase() === member.email.toLowerCase());
+          const hasActiveInv = memberInvs.length > 0;
+          const totalMemberInv = memberInvs.reduce((sum, inv) => sum + Number(inv.price), 0);
 
-        return `
-          <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center text-xs mb-3">
-            <div>
-              <div class="font-extrabold text-white text-sm mb-1">${member.email}</div>
-              <div class="text-[11px] text-slate-400">Joined: ${new Date(member.created_at || Date.now()).toLocaleDateString()} | Active Inv: <strong class="${hasActiveInv ? 'text-emerald-400' : 'text-slate-400'}">${hasActiveInv ? '₦' + totalMemberInv.toLocaleString() : 'NO'}</strong></div>
+          return `
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center text-xs mb-2">
+              <div>
+                <div class="font-extrabold text-white text-sm mb-1">${member.email}</div>
+                <div class="text-[11px] text-slate-400">Joined: ${new Date(member.created_at || Date.now()).toLocaleDateString()} | Active Inv: <strong class="${hasActiveInv ? 'text-emerald-400' : 'text-slate-400'}">${hasActiveInv ? '₦' + totalMemberInv.toLocaleString() : 'NO'}</strong></div>
+              </div>
+              <span class="px-3 py-1 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Level ${lvl}</span>
             </div>
-            <span class="px-3 py-1 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Level 1</span>
-          </div>
-        `;
-      }).join('');
+          `;
+        }).join('');
+      }
     }
-  }
+  });
 
   const activeList = document.getElementById('activeInvestmentsList');
   const investments = state.activeInvestments || [];
@@ -497,7 +544,6 @@ async function render() {
       }
     }
 
-    // Admin Users Table matching image_fdebfb.png reference format
     const adminUsersTable = document.getElementById('adminUsersTable');
     if (adminUsersTable) {
       const allUsers = state.allUsersList || [];
@@ -924,7 +970,7 @@ function toggleAdminView() {
   render();
 }
 
-function openModal(id) { document.getElementById(id).classList.add('hidden'); }
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
 function copyReferralLink() {
