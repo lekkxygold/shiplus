@@ -229,31 +229,27 @@
       <div id="tabContent-team" class="hidden space-y-6">
         <section class="bg-slate-900 border border-emerald-900/30 rounded-2xl p-5 shadow-lg space-y-4">
           <h3 class="text-lg font-bold text-white flex items-center gap-2">
-            <i data-lucide="share-2" class="w-5 h-5 text-emerald-400"></i> Referral & Team Program
+            <i data-lucide="share-2" class="w-5 h-5 text-emerald-400"></i> Referral Network
           </h3>
+          <p class="text-xs text-slate-400">Earn Level 1 (25%), Level 2 (2%), Level 3 (1%), and Level 4 (1%) commissions.</p>
           
           <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex items-center justify-between gap-2">
             <span id="refLink" class="text-xs text-slate-300 truncate">https://shiplus.onrender.com/?ref=user@example.com</span>
             <button onclick="copyReferralLink()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition shrink-0">Copy</button>
           </div>
+        </section>
 
-          <div class="grid grid-cols-4 gap-2 text-center pt-2">
-            <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-800">
-              <div class="text-emerald-400 font-extrabold text-sm">25%</div>
-              <div class="text-[10px] text-slate-400">Level 1</div>
-            </div>
-            <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-800">
-              <div class="text-emerald-400 font-extrabold text-sm">2%</div>
-              <div class="text-[10px] text-slate-400">Level 2</div>
-            </div>
-            <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-800">
-              <div class="text-emerald-400 font-extrabold text-sm">1%</div>
-              <div class="text-[10px] text-slate-400">Level 3</div>
-            </div>
-            <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-800">
-              <div class="text-emerald-400 font-extrabold text-sm">1%</div>
-              <div class="text-[10px] text-slate-400">Level 4</div>
-            </div>
+        <!-- TEAM MEMBERS SUMMARY & LIST -->
+        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+          <div class="flex justify-between items-center">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <i data-lucide="users" class="w-4 h-4 text-emerald-400"></i> Team Members (<span id="teamMembersCount">0</span>)
+            </h3>
+          </div>
+
+          <div class="space-y-2 pt-2">
+            <h4 class="text-xs font-bold text-slate-300">Level 1 Directs (25% Investment Commission)</h4>
+            <div id="teamReferralsList" class="space-y-2"></div>
           </div>
         </section>
       </div>
@@ -317,6 +313,25 @@
           </div>
           <span class="bg-amber-500 text-slate-950 text-xs font-black px-2.5 py-1 rounded">SECURE ADMIN</span>
         </div>
+
+        <!-- PLATFORM PROFILES TABLE -->
+        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+          <h3 class="text-sm font-bold text-white">Platform Database Profiles</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-800 text-[11px] text-slate-400">
+                  <th class="p-3 font-semibold">Email / Name</th>
+                  <th class="p-3 font-semibold">Balance</th>
+                  <th class="p-3 font-semibold">Investment</th>
+                </tr>
+              </thead>
+              <tbody id="adminUsersTable" class="divide-y divide-slate-800/60 text-xs">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </section>
 
         <!-- MANUAL USER CREDITING -->
         <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
