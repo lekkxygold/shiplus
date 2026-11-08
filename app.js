@@ -11,6 +11,19 @@ try {
   console.warn('Supabase initialization failed.');
 }
 
+// ==========================================
+// MULTI-ADMIN CONFIGURATION
+// ==========================================
+const ADMIN_EMAILS = [
+  'omoopeola1@gmail.com',
+  'wisdomwhite086@gmail.com'
+];
+
+function isAdminUser(email) {
+  if (!email) return false;
+  return ADMIN_EMAILS.includes(email.trim().toLowerCase());
+}
+
 const VIP_PACKAGES = [
   { id: 1, name: 'Shiplus VIP-1', price: 3800, daily: 800, days: 40, total: 32000, commission: 875, limit: 1, image: 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?auto=format&fit=crop&w=400&q=80' },
   { id: 2, name: 'Shiplus VIP-2', price: 7500, daily: 1350, days: 40, total: 54000, commission: 1875, limit: 1, image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=400&q=80' },
@@ -36,8 +49,6 @@ let state = {
   platformSettings: { minDeposit: 3800, checkinBonus: 50 },
   isAdminView: false
 };
-
-const ADMIN_EMAIL = 'omoopeola1@gmail.com';
 
 async function loadUserData(email) {
   if (!supabaseClient) return;
@@ -235,7 +246,7 @@ async function showMainApp(isNewUser) {
   document.getElementById('mainApp').classList.remove('hidden');
 
   const adminNavContainer = document.getElementById('adminNavContainer');
-  if (currentUser && currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+  if (currentUser && isAdminUser(currentUser.email)) {
     adminNavContainer.classList.remove('hidden');
   } else {
     adminNavContainer.classList.add('hidden');
@@ -419,7 +430,7 @@ async function render() {
     </tr>
   `).join('');
 
-  if (state.isAdminView && currentUser && currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+  if (state.isAdminView && currentUser && isAdminUser(currentUser.email)) {
     const adminGiftList = document.getElementById('adminGiftCodesList');
     if (adminGiftList) {
       const giftCodes = state.giftCodes || [];
@@ -509,7 +520,7 @@ async function claimDailyCheckin() {
 }
 
 async function adminManualCredit() {
-  if (!currentUser || currentUser.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+  if (!currentUser || !isAdminUser(currentUser.email)) {
     alert('Unauthorized access.');
     return;
   }
@@ -546,7 +557,7 @@ async function adminManualCredit() {
 }
 
 async function createGiftCode() {
-  if (!currentUser || currentUser.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+  if (!currentUser || !isAdminUser(currentUser.email)) {
     alert('Unauthorized access.');
     return;
   }
