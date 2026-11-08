@@ -74,7 +74,7 @@ async function loadUserData(email) {
     id: profile.id,
     email: profile.email,
     balance: parseFloat(profile.balance || 1000),
-    inviter: profile.inviter,
+    inviter: profile.inviter ? profile.inviter.toLowerCase() : null,
     bankAccount: profile.bank_account,
     purchases: profile.purchases || {},
     redeemedCodes: profile.redeemed_codes || [],
@@ -84,8 +84,8 @@ async function loadUserData(email) {
   const { data: invs } = await supabaseClient.from('active_investments').select('*').eq('user_email', email);
   state.activeInvestments = invs || [];
 
-  // Fetch team referrals (users invited by this user)
-  const { data: team } = await supabaseClient.from('profiles').select('*').eq('inviter', email);
+  // Fetch team referrals matching inviter email
+  const { data: team } = await supabaseClient.from('profiles').select('*').ilike('inviter', email);
   state.teamReferrals = team || [];
 
   await fetchGlobalData();
@@ -108,7 +108,7 @@ async function saveUserProfile() {
   if (!supabaseClient || !currentUser) return;
   await supabaseClient.from('profiles').update({
     balance: state.user.balance,
-    inviter: state.user.inviter,
+    inviter: state.user.inviter ? state.user.inviter.toLowerCase() : null,
     bank_account: state.user.bankAccount,
     purchases: state.user.purchases,
     redeemed_codes: state.user.redeemedCodes,
@@ -199,7 +199,7 @@ async function handleRegister(e) {
   const urlParams = new URLSearchParams(window.location.search);
   const urlRef = urlParams.get('ref');
   const inputRef = document.getElementById('regRefCode').value.trim().toLowerCase();
-  const inviterRef = inputRef || (urlRef ? urlRef.toLowerCase() : null);
+  const inviterRef = (inputRef || urlRef || '').trim().toLowerCase();
 
   if (supabaseClient) {
     let { data: existingProf } = await supabaseClient.from('profiles').select('*').eq('email', email).maybeSingle();
@@ -209,7 +209,6 @@ async function handleRegister(e) {
       return;
     }
 
-    // Create profile with default starting balance of 1000
     await supabaseClient.from('profiles').insert([{
       id: 'usr_' + Date.now(),
       email: email,
@@ -227,7 +226,6 @@ async function handleRegister(e) {
   
   await loadUserData(email);
 
-  // Ensure exact 1000 Welcome Bonus transaction exists once
   if (supabaseClient) {
     const { data: existingBonus } = await supabaseClient.from('transactions').select('*').eq('user_email', email).eq('type', 'Welcome Bonus');
     if (!existingBonus || existingBonus.length === 0) {
@@ -370,22 +368,29 @@ async function render() {
     lucide.createIcons();
   }
 
-  // Render Team Referrals List
+  // Render Team Referrals List with Earned Commission calculations
   const teamListContainer = document.getElementById('teamReferralsList');
   if (teamListContainer) {
     const team = state.teamReferrals || [];
     if (team.length === 0) {
       teamListContainer.innerHTML = `<p class="text-slate-500 italic text-xs">No team referrals yet. Share your referral link to build your team!</p>`;
     } else {
-      teamListContainer.innerHTML = team.map(member => `
-        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
-          <div>
-            <div class="font-bold text-white">${member.email}</div>
-            <div class="text-[10px] text-slate-400">Joined: ${new Date(member.created_at || Date.now()).toLocaleDateString()}</div>
+      // Calculate total referral commissions earned by this user
+      const myRefTxs = (state.transactions || []).filter(t => t.user_email === currentUser.email && t.type.includes('Referral Commission'));
+      
+      teamListContainer.innerHTML = team.map(member => {
+        return `
+          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+            <div>
+              <div class="font-bold text-white">${member.email}</div>
+              <div class="text-[10px] text-slate-400">Joined: ${new Date(member.created_at || Date.now()).toLocaleDateString()}</div>
+            </div>
+            <div class="text-right">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Level 1 Member</span>
+            </div>
           </div>
-          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Level 1 Member</span>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
   }
 
@@ -549,7 +554,7 @@ async function distributeMultiLevelReferralBonus(purchaseAmount) {
   if (!state.user.inviter || !supabaseClient) return;
 
   const percentages = [0.25, 0.02, 0.01, 0.01];
-  let currentInviter = state.user.inviter;
+  let currentInviter = state.user.inviter.toLowerCase();
 
   for (let i = 0; i < percentages.length; i++) {
     if (!currentInviter) break;
@@ -568,7 +573,7 @@ async function distributeMultiLevelReferralBonus(purchaseAmount) {
         status: 'Completed'
       }]);
 
-      currentInviter = inviterProfile.inviter;
+      currentInviter = inviterProfile.inviter ? inviterProfile.inviter.toLowerCase() : null;
     } else {
       break;
     }
@@ -923,8 +928,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadUserData(currentUser.email);
     showMainApp(false);
   } else {
-    document.getElementById('authContainer').classList.remove('hidden');
-    document.getElementById('mainApp').classList.add('hidden');
+    document.getElementById('authContainer').classList.add('hidden');
+    document.getElementById('mainApp').classList.remove('hidden'); // fallback view
   }
 
   const urlParams = new URLSearchParams(window.location.search);
