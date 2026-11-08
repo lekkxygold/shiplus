@@ -43,6 +43,7 @@ let state = {
   activeInvestments: [],
   giftCodes: [],
   allUsersList: [],
+  teamReferrals: [],
   isAdminView: false
 };
 
@@ -82,6 +83,10 @@ async function loadUserData(email) {
 
   const { data: invs } = await supabaseClient.from('active_investments').select('*').eq('user_email', email);
   state.activeInvestments = invs || [];
+
+  // Fetch team referrals (users invited by this user)
+  const { data: team } = await supabaseClient.from('profiles').select('*').eq('inviter', email);
+  state.teamReferrals = team || [];
 
   await fetchGlobalData();
 }
@@ -204,6 +209,7 @@ async function handleRegister(e) {
       return;
     }
 
+    // Create profile with default starting balance of 1000
     await supabaseClient.from('profiles').insert([{
       id: 'usr_' + Date.now(),
       email: email,
@@ -221,11 +227,10 @@ async function handleRegister(e) {
   
   await loadUserData(email);
 
+  // Ensure exact 1000 Welcome Bonus transaction exists once
   if (supabaseClient) {
     const { data: existingBonus } = await supabaseClient.from('transactions').select('*').eq('user_email', email).eq('type', 'Welcome Bonus');
     if (!existingBonus || existingBonus.length === 0) {
-      state.user.balance += 1000;
-      await saveUserProfile();
       await supabaseClient.from('transactions').insert([{
         user_email: email,
         type: 'Welcome Bonus',
@@ -365,6 +370,25 @@ async function render() {
     lucide.createIcons();
   }
 
+  // Render Team Referrals List
+  const teamListContainer = document.getElementById('teamReferralsList');
+  if (teamListContainer) {
+    const team = state.teamReferrals || [];
+    if (team.length === 0) {
+      teamListContainer.innerHTML = `<p class="text-slate-500 italic text-xs">No team referrals yet. Share your referral link to build your team!</p>`;
+    } else {
+      teamListContainer.innerHTML = team.map(member => `
+        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+          <div>
+            <div class="font-bold text-white">${member.email}</div>
+            <div class="text-[10px] text-slate-400">Joined: ${new Date(member.created_at || Date.now()).toLocaleDateString()}</div>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Level 1 Member</span>
+        </div>
+      `).join('');
+    }
+  }
+
   const activeList = document.getElementById('activeInvestmentsList');
   const investments = state.activeInvestments || [];
   if (investments.length === 0) {
@@ -469,7 +493,7 @@ async function render() {
           <tr class="hover:bg-slate-900/50">
             <td class="p-2.5 font-medium text-white">${u.email}</td>
             <td class="p-2.5 text-emerald-400 font-bold">₦${Number(u.balance || 0).toLocaleString()}</td>
-            <td class="p-2.5 text-slate-200">Active User</td>
+            <td class="p-2.5 text-slate-300 text-[11px]">Invited By: ${u.inviter || 'None'}</td>
             <td class="p-2.5 text-slate-400 text-[10px]">${new Date(u.created_at || Date.now()).toLocaleDateString()}</td>
           </tr>
         `).join('');
@@ -557,7 +581,6 @@ async function distributeMultiLevelReferralBonus(purchaseAmount) {
 async function claimDailyCheckin() {
   const today = new Date().toDateString();
   
-  // Re-verify from database profile to prevent any double claiming
   const { data: latestProf } = await supabaseClient.from('profiles').select('last_checkin').eq('email', currentUser.email).maybeSingle();
   if (latestProf && latestProf.last_checkin === today) {
     state.user.lastCheckin = today;
