@@ -204,13 +204,13 @@ function switchAuthTab(tab) {
   if (tab === 'register') {
     regForm.classList.remove('hidden');
     loginForm.classList.add('hidden');
-    tabRegBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition bg-emerald-600 text-white';
-    tabLoginBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition text-slate-400 hover:text-white';
+    tabRegBtn.className = 'flex-1 py-2.5 text-xs font-bold rounded-xl transition bg-emerald-600 text-white shadow-md';
+    tabLoginBtn.className = 'flex-1 py-2.5 text-xs font-bold rounded-lg transition text-slate-400 hover:text-white';
   } else {
     regForm.classList.add('hidden');
     loginForm.classList.remove('hidden');
-    tabRegBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition text-slate-400 hover:text-white';
-    tabLoginBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition bg-emerald-600 text-white';
+    tabRegBtn.className = 'flex-1 py-2.5 text-xs font-bold rounded-lg transition text-slate-400 hover:text-white';
+    tabLoginBtn.className = 'flex-1 py-2.5 text-xs font-bold rounded-xl transition bg-emerald-600 text-white shadow-md';
   }
 }
 
@@ -326,11 +326,11 @@ function switchTab(tabName) {
     
     const topBtn = document.getElementById(`navBtn-${t}`);
     if (topBtn) {
-      topBtn.className = 'flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-300 hover:bg-slate-800 transition shrink-0 border border-slate-800';
+      topBtn.className = 'flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-extrabold bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-900 transition shrink-0 border border-slate-800/80';
     }
     const botBtn = document.getElementById(`bottomNav-${t}`);
     if (botBtn) {
-      botBtn.className = 'flex flex-col items-center text-slate-400 hover:text-white py-1';
+      botBtn.className = 'flex flex-col items-center text-slate-400 hover:text-white py-1 transition transform active:scale-95';
     }
   });
 
@@ -344,12 +344,12 @@ function switchTab(tabName) {
 
   const activeTopBtn = document.getElementById(`navBtn-${tabName}`);
   if (activeTopBtn) {
-    activeTopBtn.className = 'flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white transition shrink-0 shadow';
+    activeTopBtn.className = 'flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-extrabold bg-emerald-600 text-white transition-all shadow-lg shadow-emerald-600/20 shrink-0';
   }
 
   const activeBotBtn = document.getElementById(`bottomNav-${tabName}`);
   if (activeBotBtn) {
-    activeBotBtn.className = 'flex flex-col items-center text-emerald-400 py-1';
+    activeBotBtn.className = 'flex flex-col items-center text-emerald-400 py-1 transition transform active:scale-95';
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -368,9 +368,9 @@ function switchTeamLevel(level) {
     }
     if (btnEl) {
       if (lvl === level) {
-        btnEl.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition bg-emerald-600 text-white shadow';
+        btnEl.className = 'flex-1 py-2.5 text-xs font-black rounded-xl transition-all bg-emerald-600 text-white shadow-md';
       } else {
-        btnEl.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition bg-slate-950 text-slate-400 hover:text-white border border-slate-800';
+        btnEl.className = 'flex-1 py-2.5 text-xs font-black rounded-xl transition-all bg-slate-950 text-slate-400 hover:text-white border border-slate-800/80';
       }
     }
   });
@@ -411,7 +411,7 @@ async function render() {
   } else {
     checkinBtn.disabled = false;
     checkinBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-    checkinBtn.innerHTML = '<i data-lucide="calendar-check" class="w-5 h-5"></i><span>Daily Check-in (+₦50)</span>';
+    checkinBtn.innerHTML = '<i data-lucide="calendar-check" class="w-4 h-4"></i><span>Daily Check-in (+₦50)</span>';
     lucide.createIcons();
   }
 
@@ -437,12 +437,12 @@ async function render() {
           const totalMemberInv = memberInvs.reduce((sum, inv) => sum + Number(inv.price), 0);
 
           return `
-            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center text-xs mb-2">
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 flex justify-between items-center text-xs mb-2">
               <div>
                 <div class="font-extrabold text-white text-sm mb-1">${member.email}</div>
                 <div class="text-[11px] text-slate-400">Joined: ${new Date(member.created_at || Date.now()).toLocaleDateString()} | Active Inv: <strong class="${hasActiveInv ? 'text-emerald-400' : 'text-slate-400'}">${hasActiveInv ? '₦' + totalMemberInv.toLocaleString() : 'NO'}</strong></div>
               </div>
-              <span class="px-3 py-1 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Level ${lvl}</span>
+              <span class="px-3 py-1 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Level ${lvl}</span>
             </div>
           `;
         }).join('');
@@ -456,12 +456,12 @@ async function render() {
     activeList.innerHTML = `<p class="text-slate-500 italic">No active investment plans yet. Purchase a VIP Fast Charger plan below to start receiving automatic 24-hour income drops.</p>`;
   } else {
     activeList.innerHTML = investments.map(inv => `
-      <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
+      <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 flex justify-between items-center">
         <div>
           <div class="font-bold text-white">${inv.pkg_name}</div>
-          <div class="text-[10px] text-emerald-400">Daily Drop: ₦${Number(inv.daily_income).toLocaleString()} | Progress: ${inv.days_claimed}/${inv.days_total} Days</div>
+          <div class="text-[10px] text-emerald-400 mt-0.5">Daily Drop: ₦${Number(inv.daily_income).toLocaleString()} | Progress: ${inv.days_claimed}/${inv.days_total} Days</div>
         </div>
-        <div class="text-right text-[10px] text-slate-400">
+        <div class="text-right text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
           Active & Earning
         </div>
       </div>
@@ -474,21 +474,21 @@ async function render() {
     const isLimitReached = userPurchased >= pkg.limit;
 
     return `
-      <div class="bg-slate-900 border border-emerald-900/40 rounded-2xl overflow-hidden shadow-lg flex flex-col justify-between">
+      <div class="bg-slate-900/80 backdrop-blur border border-emerald-900/40 rounded-3xl overflow-hidden shadow-xl flex flex-col justify-between">
         <div class="relative h-44 w-full bg-slate-950 overflow-hidden">
           <img src="${pkg.image}" alt="${pkg.name}" class="w-full h-full object-cover opacity-80 hover:scale-105 transition duration-500">
           <div class="absolute top-3 right-3 bg-emerald-500 text-slate-950 text-xs font-black px-3 py-1 rounded-full shadow-md">
             ₦${pkg.price.toLocaleString()}
           </div>
-          <div class="absolute bottom-2 left-3 text-xs font-bold text-emerald-400 bg-slate-950/80 px-2 py-0.5 rounded">
+          <div class="absolute bottom-2 left-3 text-xs font-bold text-emerald-400 bg-slate-950/80 px-2.5 py-1 rounded-lg border border-slate-800">
             Limit: ${userPurchased}/${pkg.limit} Purchased
           </div>
         </div>
 
-        <div class="p-5 flex-1 flex flex-col justify-between">
-          <h3 class="font-extrabold text-white text-lg mb-2">${pkg.name}</h3>
+        <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+          <h3 class="font-black text-white text-lg">${pkg.name}</h3>
 
-          <div class="grid grid-cols-2 gap-2 text-xs text-slate-300 bg-slate-950/60 p-3 rounded-xl mb-4 border border-slate-800">
+          <div class="grid grid-cols-2 gap-2 text-xs text-slate-300 bg-slate-950 p-3.5 rounded-2xl border border-slate-800/80">
             <div>Daily: <strong class="text-white">₦${pkg.daily.toLocaleString()}</strong></div>
             <div>Total: <strong class="text-white">₦${pkg.total.toLocaleString()}</strong></div>
             <div>Commission: <strong class="text-emerald-400">₦${pkg.commission.toLocaleString()}</strong></div>
@@ -498,10 +498,10 @@ async function render() {
           <button 
             onclick="buyVipPackage(${pkg.id})" 
             ${isLimitReached ? 'disabled' : ''} 
-            class="w-full font-bold py-3 rounded-xl transition text-xs shadow-md ${
+            class="w-full font-extrabold py-3.5 rounded-2xl transition text-xs shadow-md ${
               isLimitReached 
                 ? 'bg-slate-800 text-slate-500 cursor-not-allowed' 
-                : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20'
           }">
             ${isLimitReached ? 'Limit Reached' : 'Invest Now'}
           </button>
@@ -515,16 +515,16 @@ async function render() {
   const myTxs = txs.filter(t => currentUser && t.user_email.toLowerCase() === currentUser.email.toLowerCase());
   userTxTable.innerHTML = myTxs.map(tx => `
     <tr class="hover:bg-slate-900/50">
-      <td class="p-2.5 font-medium text-slate-200">${tx.type}</td>
-      <td class="p-2.5 font-bold text-white">₦${Number(tx.amount).toLocaleString()}</td>
-      <td class="p-2.5">
-        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
-          tx.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-          tx.status === 'Pending' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
-          'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+      <td class="p-3 font-medium text-slate-200">${tx.type}</td>
+      <td class="p-3 font-bold text-white">₦${Number(tx.amount).toLocaleString()}</td>
+      <td class="p-3">
+        <span class="px-2.5 py-1 rounded-lg text-[10px] font-black ${
+          tx.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+          tx.status === 'Pending' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+          'bg-rose-500/10 text-rose-400 border border-rose-500/20'
         }">${tx.status}</span>
       </td>
-      <td class="p-2.5 text-slate-400 text-[10px]">${new Date(tx.created_at).toLocaleDateString()}</td>
+      <td class="p-3 text-slate-400 text-[10px]">${new Date(tx.created_at).toLocaleDateString()}</td>
     </tr>
   `).join('');
 
@@ -536,7 +536,7 @@ async function render() {
         adminGiftList.innerHTML = `<p class="text-slate-500 italic">No gift codes created yet.</p>`;
       } else {
         adminGiftList.innerHTML = giftCodes.map(g => `
-          <div class="bg-slate-950 p-2 rounded border border-slate-800 flex justify-between items-center text-[11px]">
+          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80 flex justify-between items-center text-xs">
             <div><strong class="text-emerald-400">${g.code}</strong> - ₦${g.amount}</div>
             <div class="text-slate-400">Remaining Qty: ${g.remaining_qty}/${g.total_qty}</div>
           </div>
@@ -573,14 +573,14 @@ async function render() {
         adminTxTable.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">No pending transactions found.</td></tr>`;
       } else {
         adminTxTable.innerHTML = pendingTx.map(tx => `
-          <tr>
-            <td class="p-2.5 font-medium text-slate-200">${tx.user_email}</td>
-            <td class="p-2.5">${tx.type}</td>
-            <td class="p-2.5 font-bold text-white">₦${Number(tx.amount).toLocaleString()}</td>
-            <td class="p-2.5 text-emerald-400 font-bold">₦${(Number(tx.amount) - Number(tx.fee || 0)).toLocaleString()}</td>
-            <td class="p-2.5 space-x-1">
-              <button onclick="processAdminTx('${tx.id}', 'Approve')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded">Approve</button>
-              <button onclick="processAdminTx('${tx.id}', 'Reject')" class="bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded">Reject</button>
+          <tr class="border-b border-slate-800/50">
+            <td class="p-3 font-medium text-slate-200">${tx.user_email}</td>
+            <td class="p-3">${tx.type}</td>
+            <td class="p-3 font-bold text-white">₦${Number(tx.amount).toLocaleString()}</td>
+            <td class="p-3 text-emerald-400 font-bold">₦${(Number(tx.amount) - Number(tx.fee || 0)).toLocaleString()}</td>
+            <td class="p-3 space-x-1.5">
+              <button onclick="processAdminTx('${tx.id}', 'Approve')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg">Approve</button>
+              <button onclick="processAdminTx('${tx.id}', 'Reject')" class="bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg">Reject</button>
             </td>
           </tr>
         `).join('');
