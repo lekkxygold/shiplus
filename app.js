@@ -51,14 +51,15 @@ const ADMIN_EMAIL = 'omoopeola1@gmail.com';
 
 async function loadUserData(email) {
   if (!supabaseClient) return;
+  const cleanEmail = email.trim().toLowerCase();
   
-  let { data: profile } = await supabaseClient.from('profiles').select('*').eq('email', email).maybeSingle();
+  let { data: profile } = await supabaseClient.from('profiles').select('*').eq('email', cleanEmail).maybeSingle();
   
   if (!profile) {
     const userId = 'usr_' + Date.now();
     const newProfile = {
       id: userId,
-      email: email,
+      email: cleanEmail,
       balance: 1000,
       inviter: null,
       bank_account: null,
@@ -74,18 +75,18 @@ async function loadUserData(email) {
     id: profile.id,
     email: profile.email,
     balance: parseFloat(profile.balance || 1000),
-    inviter: profile.inviter ? profile.inviter.toLowerCase() : null,
+    inviter: profile.inviter ? profile.inviter.trim().toLowerCase() : null,
     bankAccount: profile.bank_account,
     purchases: profile.purchases || {},
     redeemedCodes: profile.redeemed_codes || [],
     lastCheckin: profile.last_checkin || null
   };
 
-  const { data: invs } = await supabaseClient.from('active_investments').select('*').eq('user_email', email);
+  const { data: invs } = await supabaseClient.from('active_investments').select('*').eq('user_email', cleanEmail);
   state.activeInvestments = invs || [];
 
-  // Fetch team referrals matching inviter email
-  const { data: team } = await supabaseClient.from('profiles').select('*').ilike('inviter', email);
+  // Fetch team referrals matching inviter email case-insensitively
+  const { data: team } = await supabaseClient.from('profiles').select('*').eq('inviter', cleanEmail);
   state.teamReferrals = team || [];
 
   await fetchGlobalData();
@@ -100,7 +101,7 @@ async function fetchGlobalData() {
   const { data: codes } = await supabaseClient.from('gift_codes').select('*');
   state.giftCodes = codes || [];
 
-  const { data: users } = await supabaseClient.from('profiles').select('*');
+  const { data: users } = await supabaseClient.from('profiles').select('*').order('created_at', { ascending: false });
   state.allUsersList = users || [];
 }
 
@@ -108,12 +109,12 @@ async function saveUserProfile() {
   if (!supabaseClient || !currentUser) return;
   await supabaseClient.from('profiles').update({
     balance: state.user.balance,
-    inviter: state.user.inviter ? state.user.inviter.toLowerCase() : null,
+    inviter: state.user.inviter ? state.user.inviter.trim().toLowerCase() : null,
     bank_account: state.user.bankAccount,
     purchases: state.user.purchases,
     redeemed_codes: state.user.redeemedCodes,
     last_checkin: state.user.lastCheckin
-  }).eq('email', currentUser.email);
+  }).eq('email', currentUser.email.toLowerCase());
 }
 
 // ==========================================
@@ -151,7 +152,7 @@ async function checkAndProcessAutomaticIncome() {
     await saveUserProfile();
     
     await supabaseClient.from('transactions').insert([{
-      user_email: currentUser.email,
+      user_email: currentUser.email.toLowerCase(),
       type: 'Automatic 24H Return',
       amount: totalDropped,
       fee: 0,
@@ -368,29 +369,22 @@ async function render() {
     lucide.createIcons();
   }
 
-  // Render Team Referrals List with Earned Commission calculations
+  // Render Team Referrals List
   const teamListContainer = document.getElementById('teamReferralsList');
   if (teamListContainer) {
     const team = state.teamReferrals || [];
     if (team.length === 0) {
       teamListContainer.innerHTML = `<p class="text-slate-500 italic text-xs">No team referrals yet. Share your referral link to build your team!</p>`;
     } else {
-      // Calculate total referral commissions earned by this user
-      const myRefTxs = (state.transactions || []).filter(t => t.user_email === currentUser.email && t.type.includes('Referral Commission'));
-      
-      teamListContainer.innerHTML = team.map(member => {
-        return `
-          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
-            <div>
-              <div class="font-bold text-white">${member.email}</div>
-              <div class="text-[10px] text-slate-400">Joined: ${new Date(member.created_at || Date.now()).toLocaleDateString()}</div>
-            </div>
-            <div class="text-right">
-              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Level 1 Member</span>
-            </div>
+      teamListContainer.innerHTML = team.map(member => `
+        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+          <div>
+            <div class="font-bold text-white">${member.email}</div>
+            <div class="text-[10px] text-slate-400">Joined: ${new Date(member.created_at || Date.now()).toLocaleDateString()}</div>
           </div>
-        `;
-      }).join('');
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Level 1 Member</span>
+        </div>
+      `).join('');
     }
   }
 
@@ -456,7 +450,7 @@ async function render() {
 
   const userTxTable = document.getElementById('userTxTable');
   const txs = state.transactions || [];
-  const myTxs = txs.filter(t => currentUser && t.user_email === currentUser.email);
+  const myTxs = txs.filter(t => currentUser && t.user_email.toLowerCase() === currentUser.email.toLowerCase());
   userTxTable.innerHTML = myTxs.map(tx => `
     <tr class="hover:bg-slate-900/50">
       <td class="p-2.5 font-medium text-slate-200">${tx.type}</td>
@@ -573,7 +567,7 @@ async function distributeMultiLevelReferralBonus(purchaseAmount) {
         status: 'Completed'
       }]);
 
-      currentInviter = inviterProfile.inviter ? inviterProfile.inviter.toLowerCase() : null;
+      currentInviter = inviterProfile.inviter ? inviterProfile.inviter.trim().toLowerCase() : null;
     } else {
       break;
     }
@@ -586,7 +580,7 @@ async function distributeMultiLevelReferralBonus(purchaseAmount) {
 async function claimDailyCheckin() {
   const today = new Date().toDateString();
   
-  const { data: latestProf } = await supabaseClient.from('profiles').select('last_checkin').eq('email', currentUser.email).maybeSingle();
+  const { data: latestProf } = await supabaseClient.from('profiles').select('last_checkin').eq('email', currentUser.email.toLowerCase()).maybeSingle();
   if (latestProf && latestProf.last_checkin === today) {
     state.user.lastCheckin = today;
     render();
@@ -599,7 +593,7 @@ async function claimDailyCheckin() {
   await saveUserProfile();
 
   await supabaseClient.from('transactions').insert([{
-    user_email: currentUser.email,
+    user_email: currentUser.email.toLowerCase(),
     type: 'Daily Reward',
     amount: 50,
     fee: 0,
@@ -712,7 +706,7 @@ async function redeemGiftCode() {
   await saveUserProfile();
 
   await supabaseClient.from('transactions').insert([{
-    user_email: currentUser.email,
+    user_email: currentUser.email.toLowerCase(),
     type: `Gift Code (${inputCode})`,
     amount: giftObj.amount,
     fee: 0,
@@ -746,7 +740,7 @@ async function buyVipPackage(pkgId) {
 
   const now = Date.now();
   await supabaseClient.from('active_investments').insert([{
-    user_email: currentUser.email,
+    user_email: currentUser.email.toLowerCase(),
     pkg_name: pkg.name,
     price: pkg.price,
     daily_income: pkg.daily,
@@ -756,7 +750,7 @@ async function buyVipPackage(pkgId) {
   }]);
 
   await supabaseClient.from('transactions').insert([{
-    user_email: currentUser.email,
+    user_email: currentUser.email.toLowerCase(),
     type: `Invest: ${pkg.name}`,
     amount: pkg.price,
     fee: 0,
@@ -777,7 +771,7 @@ async function submitDeposit() {
   }
 
   await supabaseClient.from('transactions').insert([{
-    user_email: currentUser.email,
+    user_email: currentUser.email.toLowerCase(),
     type: 'Deposit',
     amount: amount,
     fee: 0,
@@ -839,7 +833,7 @@ async function submitWithdrawal() {
   await saveUserProfile();
 
   await supabaseClient.from('transactions').insert([{
-    user_email: currentUser.email,
+    user_email: currentUser.email.toLowerCase(),
     type: 'Withdrawal',
     amount: amount,
     fee: fee,
@@ -928,8 +922,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadUserData(currentUser.email);
     showMainApp(false);
   } else {
-    document.getElementById('authContainer').classList.add('hidden');
-    document.getElementById('mainApp').classList.remove('hidden'); // fallback view
+    document.getElementById('authContainer').classList.remove('hidden');
+    document.getElementById('mainApp').classList.add('hidden');
   }
 
   const urlParams = new URLSearchParams(window.location.search);
