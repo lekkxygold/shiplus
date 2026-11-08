@@ -419,13 +419,25 @@ async function render() {
     </tr>
   `).join('');
 
-  // ADMIN VIEW: SHOWING TOTAL CUMULATIVE INVESTMENTS ACROSS ALL TRANSACTIONS & ACTIVE PLANS
   if (state.isAdminView && currentUser && currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+    const adminGiftList = document.getElementById('adminGiftCodesList');
+    if (adminGiftList) {
+      const giftCodes = state.giftCodes || [];
+      if (giftCodes.length === 0) {
+        adminGiftList.innerHTML = `<p class="text-slate-400 italic text-[11px]">No gift codes created yet.</p>`;
+      } else {
+        adminGiftList.innerHTML = giftCodes.map(g => `
+          <div class="bg-slate-50 p-2 rounded-xl border border-slate-200 flex justify-between items-center text-xs">
+            <div><strong class="text-emerald-600">${g.code}</strong> - ₦${g.amount}</div>
+            <div class="text-slate-500">Qty: ${g.remaining_qty}/${g.total_qty}</div>
+          </div>
+        `).join('');
+      }
+    }
+
     document.getElementById('adminUsersTable').innerHTML = state.allUsersList.map(u => {
-      // Calculate total investments from completed investment transactions for this user
       const userInvTxs = (state.transactions || []).filter(t => t.user_email.toLowerCase() === u.email.toLowerCase() && t.type.startsWith('Invest:') && t.status === 'Completed');
       const totalInvested = userInvTxs.reduce((sum, t) => sum + Number(t.amount), 0);
-      
       const bankInfo = u.bank_account ? `${u.bank_account.bankName} (${u.bank_account.accountNo})` : 'Not Bound';
 
       return `
@@ -443,7 +455,10 @@ async function render() {
         <td class="p-2">${tx.user_email}</td>
         <td class="p-2">${tx.type}</td>
         <td class="p-2 font-bold">₦${Number(tx.amount).toLocaleString()}</td>
-        <td class="p-2"><button onclick="processAdminTx('${tx.id}', 'Approve')" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px]">Approve</button></td>
+        <td class="p-2 space-x-1">
+          <button onclick="processAdminTx('${tx.id}', 'Approve')" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold">Approve</button>
+          <button onclick="processAdminTx('${tx.id}', 'Reject')" class="bg-rose-600 text-white px-2 py-1 rounded text-[10px] font-bold">Reject</button>
+        </td>
       </tr>
     `).join('');
   }
@@ -491,6 +506,121 @@ async function claimDailyCheckin() {
   await supabaseClient.from('transactions').insert([{ user_email: currentUser.email.toLowerCase(), type: 'Daily Reward', amount: bonus, fee: 0, status: 'Completed' }]);
   render();
   alert(`Success! ₦${bonus} added.`);
+}
+
+async function adminManualCredit() {
+  if (!currentUser || currentUser.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+    alert('Unauthorized access.');
+    return;
+  }
+
+  const targetEmail = document.getElementById('adminCreditEmail').value.trim().toLowerCase();
+  const creditAmount = parseFloat(document.getElementById('adminCreditAmount').value);
+
+  if (!targetEmail || !creditAmount || creditAmount <= 0) {
+    alert('Please provide a valid user email and credit amount.');
+    return;
+  }
+
+  const { data: targetProf } = await supabaseClient.from('profiles').select('*').eq('email', targetEmail).maybeSingle();
+  if (targetProf) {
+    const newBal = Number(targetProf.balance || 0) + creditAmount;
+    await supabaseClient.from('profiles').update({ balance: newBal }).eq('email', targetEmail);
+  } else {
+    await supabaseClient.from('profiles').insert([{ id: 'usr_' + Date.now(), email: targetEmail, balance: 1000 + creditAmount }]);
+  }
+
+  await supabaseClient.from('transactions').insert([{
+    user_email: targetEmail,
+    type: 'Admin Manual Credit',
+    amount: creditAmount,
+    fee: 0,
+    status: 'Completed'
+  }]);
+
+  document.getElementById('adminCreditEmail').value = '';
+  document.getElementById('adminCreditAmount').value = '';
+  await fetchGlobalData();
+  render();
+  alert(`Successfully credited ₦${creditAmount.toLocaleString()} to ${targetEmail}!`);
+}
+
+async function createGiftCode() {
+  if (!currentUser || currentUser.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+    alert('Unauthorized access.');
+    return;
+  }
+
+  const code = document.getElementById('adminCodeName').value.trim().toUpperCase();
+  const amount = parseFloat(document.getElementById('adminCodeAmount').value);
+  const qty = parseInt(document.getElementById('adminCodeQty').value, 10);
+
+  if (!code || !amount || !qty || amount <= 0 || qty <= 0) {
+    alert('Please enter valid Code Name, Amount, and Quantity.');
+    return;
+  }
+
+  const { error } = await supabaseClient.from('gift_codes').insert([{
+    code: code,
+    amount: amount,
+    total_qty: qty,
+    remaining_qty: qty
+  }]);
+
+  if (error) {
+    alert('Error creating gift code: ' + error.message);
+    return;
+  }
+
+  document.getElementById('adminCodeName').value = '';
+  document.getElementById('adminCodeAmount').value = '';
+  document.getElementById('adminCodeQty').value = '';
+  await fetchGlobalData();
+  render();
+  alert(`Gift code ${code} for ₦${amount} (Qty: ${qty}) created successfully!`);
+}
+
+async function redeemGiftCode() {
+  const inputCode = document.getElementById('giftCodeInput').value.trim().toUpperCase();
+  if (!inputCode) {
+    alert('Please enter a gift code.');
+    return;
+  }
+
+  if (state.user.redeemedCodes.includes(inputCode)) {
+    alert('You have already redeemed this gift code.');
+    return;
+  }
+
+  const { data: giftObj } = await supabaseClient.from('gift_codes').select('*').eq('code', inputCode).maybeSingle();
+  if (!giftObj) {
+    alert('Invalid gift code.');
+    return;
+  }
+
+  if (giftObj.remaining_qty <= 0) {
+    alert('This gift code has reached its maximum redemptions.');
+    return;
+  }
+
+  await supabaseClient.from('gift_codes').update({ remaining_qty: giftObj.remaining_qty - 1 }).eq('code', inputCode);
+
+  state.user.redeemedCodes.push(inputCode);
+  state.user.balance += Number(giftObj.amount);
+  await saveUserProfile();
+
+  await supabaseClient.from('transactions').insert([{
+    user_email: currentUser.email.toLowerCase(),
+    type: `Gift Code (${inputCode})`,
+    amount: giftObj.amount,
+    fee: 0,
+    status: 'Completed'
+  }]);
+
+  document.getElementById('giftCodeInput').value = '';
+  await fetchGlobalData();
+  render();
+  alert(`Success! ₦${Number(giftObj.amount).toLocaleString()} added to your account.`);
 }
 
 async function buyVipPackage(pkgId) {
@@ -543,7 +673,26 @@ async function submitWithdrawal() {
 }
 
 async function processAdminTx(txId, action) {
-  await supabaseClient.from('transactions').update({ status: action === 'Approve' ? 'Completed' : 'Rejected' }).eq('id', txId);
+  const tx = state.transactions.find(t => t.id === txId);
+  if (!tx) return;
+  const newStatus = action === 'Approve' ? 'Completed' : 'Rejected';
+  await supabaseClient.from('transactions').update({ status: newStatus }).eq('id', txId);
+
+  if (action === 'Approve' && tx.type === 'Deposit') {
+    const { data: targetProf } = await supabaseClient.from('profiles').select('*').eq('email', tx.user_email).maybeSingle();
+    if (targetProf) {
+      const newBal = Number(targetProf.balance || 0) + Number(tx.amount);
+      await supabaseClient.from('profiles').update({ balance: newBal }).eq('email', tx.user_email);
+    }
+  } else if (action === 'Reject' && tx.type === 'Withdrawal') {
+    const { data: targetProf } = await supabaseClient.from('profiles').select('*').eq('email', tx.user_email).maybeSingle();
+    if (targetProf) {
+      const newBal = Number(targetProf.balance || 0) + Number(tx.amount);
+      await supabaseClient.from('profiles').update({ balance: newBal }).eq('email', tx.user_email);
+    }
+  }
+
+  await fetchGlobalData();
   render();
 }
 
