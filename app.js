@@ -119,12 +119,10 @@ async function computeTeamLevels(userEmail) {
 function computeAvailableSpins() {
   if (!currentUser) return;
   
-  // Rule: 1 free spin per VALID referral downline (Level 1 invitees who have active investments)
   const validInvitesCount = (state.teamLevels[1] || []).filter(u => {
     return state.allInvestments.some(inv => inv.user_email.toLowerCase() === u.email.toLowerCase());
   }).length;
 
-  // Rule: 1 free spin if user invests in VIP 3 or higher
   let vip3PlusBonusSpins = 0;
   if (state.user.purchases) {
     Object.keys(state.user.purchases).forEach(pkgId => {
@@ -140,7 +138,6 @@ function computeAvailableSpins() {
 
 async function saveUserProfile() {
   if (!supabaseClient || !currentUser) return;
-  // Exclude 'spins_count' which was causing the 400 Bad Request. We store 'spins_used' instead.
   await supabaseClient.from('profiles').update({
     balance: state.user.balance,
     inviter: state.user.inviter ? state.user.inviter.trim().toLowerCase() : null,
@@ -570,7 +567,7 @@ async function toggleUserSuspension(targetEmail, suspendState) {
 async function triggerLuckySpin() {
   if (state.isSpinning) return;
   if (state.user.spinsCount <= 0) {
-    alert('You have no free spins remaining. Invite valid investing downlines or purchase VIP 3+ packages to unlock spins!');
+    alert('You have no free spins remaining. Spins require a valid referral who has invested, or an investment in VIP 3 or higher!');
     return;
   }
 
@@ -578,40 +575,37 @@ async function triggerLuckySpin() {
   state.user.spinsCountUsed = (state.user.spinsCountUsed || 0) + 1;
   state.user.spinsCount -= 1;
 
-  // 9 segments (each 40 degrees):
-  // 1: ₦50 (0-40), 2: ₦100 (40-80), 3: ₦200 (80-120), 4: ₦300 (120-160), 5: ₦400 (160-200),
-  // 6: ₦500 (200-240), 7: ₦600 (240-280), 8: ₦800 (280-320), 9: ₦1000 (320-360 [Rare 2%])
   const rand = Math.random() * 100;
   let rewardAmount = 50;
   let targetAngle = 20;
 
   if (rand < 2) {
     rewardAmount = 1000;
-    targetAngle = 340; // Segment 9
+    targetAngle = 340;
   } else if (rand < 10) {
     rewardAmount = 800;
-    targetAngle = 300; // Segment 8
+    targetAngle = 300;
   } else if (rand < 22) {
     rewardAmount = 600;
-    targetAngle = 260; // Segment 7
+    targetAngle = 260;
   } else if (rand < 38) {
     rewardAmount = 500;
-    targetAngle = 220; // Segment 6
+    targetAngle = 220;
   } else if (rand < 55) {
     rewardAmount = 400;
-    targetAngle = 180; // Segment 5
+    targetAngle = 180;
   } else if (rand < 70) {
     rewardAmount = 300;
-    targetAngle = 140; // Segment 4
+    targetAngle = 140;
   } else if (rand < 82) {
     rewardAmount = 200;
-    targetAngle = 100; // Segment 3
+    targetAngle = 100;
   } else if (rand < 92) {
     rewardAmount = 100;
-    targetAngle = 60; // Segment 2
+    targetAngle = 60;
   } else {
     rewardAmount = 50;
-    targetAngle = 20; // Segment 1
+    targetAngle = 20;
   }
 
   const totalRotation = 1440 + (360 - targetAngle);
@@ -647,7 +641,7 @@ async function claimDailyCheckin() {
 
   const today = new Date().toDateString();
   const bonus = state.platformSettings.checkinBonus;
-  state.user.balance += bonus;
+  state.user.balance += Number(bonus);
   state.user.lastCheckin = today;
   await saveUserProfile();
   await supabaseClient.from('transactions').insert([{ user_email: currentUser.email.toLowerCase(), type: 'Daily Reward', amount: bonus, fee: 0, status: 'Completed' }]);
@@ -676,7 +670,7 @@ async function submitWithdrawal() {
   if (!amount || amount < 1000) { alert('Minimum withdrawal is ₦1,000.'); return; }
   if (state.user.balance < amount) { alert('Insufficient balance.'); return; }
 
-  state.user.balance -= amount;
+  state.user.balance -= Number(amount);
   await saveUserProfile();
   await supabaseClient.from('transactions').insert([{ user_email: currentUser.email.toLowerCase(), type: 'Withdrawal', amount, fee: amount * 0.15, status: 'Pending' }]);
   closeModal('withdrawModal');
