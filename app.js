@@ -36,7 +36,7 @@ const VIP_PACKAGES = [
 
 let currentUser = null;
 let state = {
-  user: { id: null, email: '', balance: 1000, lastCheckin: null, purchases: {}, redeemedCodes: [], inviter: null, bankAccount: null },
+  user: { id: null, email: '', balance: 1000, lastCheckin: null, purchases: {}, redeemedCodes: [], inviter: null, bankAccount: null, isSuspended: false, spinsCount: 0 },
   transactions: [],
   activeInvestments: [],
   allInvestments: [],
@@ -44,7 +44,8 @@ let state = {
   allUsersList: [],
   teamLevels: { 1: [], 2: [], 3: [], 4: [] },
   platformSettings: { minDeposit: 3800, checkinBonus: 50 },
-  isAdminView: false
+  isAdminView: false,
+  isSpinning: false
 };
 
 async function loadUserData(email) {
@@ -53,7 +54,18 @@ async function loadUserData(email) {
   
   let { data: profile } = await supabaseClient.from('profiles').select('*').eq('email', cleanEmail).maybeSingle();
   if (!profile) {
-    const newProfile = { id: 'usr_' + Date.now(), email: cleanEmail, balance: 1000, inviter: null, bank_account: null, purchases: {}, redeemed_codes: [], last_checkin: null };
+    const newProfile = { 
+      id: 'usr_' + Date.now(), 
+      email: cleanEmail, 
+      balance: 1000, // Explicit fixed numerical balance 1000
+      inviter: null, 
+      bank_account: null, 
+      purchases: {}, 
+      redeemed_codes: [], 
+      last_checkin: null,
+      is_suspended: false,
+      spins_count: 0
+    };
     await supabaseClient.from('profiles').upsert([newProfile]);
     profile = newProfile;
   }
@@ -61,12 +73,14 @@ async function loadUserData(email) {
   state.user = {
     id: profile.id,
     email: profile.email,
-    balance: parseFloat(profile.balance || 1000),
+    balance: Number(profile.balance !== undefined && profile.balance !== null ? profile.balance : 1000),
     inviter: profile.inviter ? profile.inviter.trim().toLowerCase() : null,
     bankAccount: profile.bank_account,
     purchases: profile.purchases || {},
     redeemedCodes: profile.redeemed_codes || [],
-    lastCheckin: profile.last_checkin || null
+    lastCheckin: profile.last_checkin || null,
+    isSuspended: profile.is_suspended || false,
+    spinsCount: Number(profile.spins_count || 0)
   };
 
   const { data: invs } = await supabaseClient.from('active_investments').select('*').eq('user_email', cleanEmail);
@@ -74,6 +88,7 @@ async function loadUserData(email) {
 
   await fetchGlobalData();
   await computeTeamLevels(cleanEmail);
+  computeAvailableSpins();
 }
 
 async function fetchGlobalData() {
@@ -101,6 +116,28 @@ async function computeTeamLevels(userEmail) {
   state.teamLevels = { 1: level1, 2: level2, 3: level3, 4: level4 };
 }
 
+function computeAvailableSpins() {
+  if (!currentUser) return;
+  
+  // 1 spin per active invite downline who has invested
+  const activeLevel1Invites = (state.teamLevels[1] || []).filter(u => {
+    return state.allInvestments.some(inv => inv.user_email.toLowerCase() === u.email.toLowerCase());
+  }).length;
+
+  // 1 spin for purchasing VIP 3 or higher
+  let vip3BonusSpins = 0;
+  if (state.user.purchases) {
+    Object.keys(state.user.purchases).forEach(pkgId => {
+      if (Number(pkgId) >= 3 && state.user.purchases[pkgId] > 0) {
+        vip3BonusSpins += Number(state.user.purchases[pkgId]);
+      }
+    });
+  }
+
+  const earnedSpins = activeLevel1Invites + vip3BonusSpins;
+  state.user.spinsCount = Math.max(0, earnedSpins - (state.user.spinsCountUsed || 0));
+}
+
 async function saveUserProfile() {
   if (!supabaseClient || !currentUser) return;
   await supabaseClient.from('profiles').update({
@@ -109,7 +146,9 @@ async function saveUserProfile() {
     bank_account: state.user.bankAccount,
     purchases: state.user.purchases,
     redeemed_codes: state.user.redeemedCodes,
-    last_checkin: state.user.lastCheckin
+    last_checkin: state.user.lastCheckin,
+    is_suspended: state.user.isSuspended,
+    spins_count: state.user.spinsCountUsed || 0
   }).eq('email', currentUser.email.toLowerCase());
 }
 
@@ -139,7 +178,7 @@ async function checkAndProcessAutomaticIncome() {
   }
 
   if (totalDropped > 0) {
-    state.user.balance += totalDropped;
+    state.user.balance += Number(totalDropped);
     await saveUserProfile();
     await supabaseClient.from('transactions').insert([{
       user_email: currentUser.email.toLowerCase(),
@@ -187,6 +226,8 @@ async function handleRegister(e) {
   const inputRef = document.getElementById('regRefCode').value.trim().toLowerCase();
   const inviterRef = (inputRef || urlRef || '').trim().toLowerCase();
 
+  const INITIAL_WELCOME_BONUS = 1000;
+
   if (supabaseClient) {
     let { data: existingProf } = await supabaseClient.from('profiles').select('*').eq('email', email).maybeSingle();
     if (existingProf) {
@@ -197,12 +238,14 @@ async function handleRegister(e) {
     await supabaseClient.from('profiles').insert([{
       id: 'usr_' + Date.now(),
       email: email,
-      balance: 1000,
+      balance: INITIAL_WELCOME_BONUS,
       inviter: inviterRef || null,
       bank_account: null,
       purchases: {},
       redeemed_codes: [],
-      last_checkin: null
+      last_checkin: null,
+      is_suspended: false,
+      spins_count: 0
     }]);
   }
 
@@ -214,7 +257,7 @@ async function handleRegister(e) {
     await supabaseClient.from('transactions').insert([{
       user_email: email,
       type: 'Welcome Bonus',
-      amount: 1000,
+      amount: INITIAL_WELCOME_BONUS,
       fee: 0,
       status: 'Completed'
     }]);
@@ -312,6 +355,7 @@ async function render() {
   if (currentUser) {
     document.getElementById('userEmailDisplay').textContent = currentUser.email;
     document.getElementById('refLink').textContent = `${window.location.origin}${window.location.pathname}?ref=${currentUser.email}`;
+    document.getElementById('spinCountDisplay').textContent = state.user.spinsCount || 0;
   }
 
   const unboundView = document.getElementById('bankUnboundView');
@@ -445,7 +489,6 @@ async function render() {
 
     renderAdminUsers();
 
-    // Render Pending Transactions with the User's Bound Bank Details explicitly shown
     document.getElementById('adminTxTable').innerHTML = state.transactions.filter(t => t.status === 'Pending').map(tx => {
       const txUser = state.allUsersList.find(u => u.email.toLowerCase() === tx.user_email.toLowerCase());
       let bankDetailsHtml = '<span class="text-rose-500 italic text-[10px]">Bank Not Bound</span>';
@@ -488,7 +531,7 @@ function renderAdminUsers() {
   if (!tableBody) return;
 
   if (filteredUsers.length === 0) {
-    tableBody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-slate-400 italic">No members found.</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="5" class="p-3 text-center text-slate-400 italic">No members found.</td></tr>`;
     return;
   }
 
@@ -496,6 +539,7 @@ function renderAdminUsers() {
     const userInvTxs = (state.transactions || []).filter(t => t.user_email.toLowerCase() === u.email.toLowerCase() && t.type.startsWith('Invest:') && t.status === 'Completed');
     const totalInvested = userInvTxs.reduce((sum, t) => sum + Number(t.amount), 0);
     const bankInfo = u.bank_account ? `${u.bank_account.bankName} (${u.bank_account.accountNo})` : 'Not Bound';
+    const isSuspended = u.is_suspended || false;
 
     return `
       <tr>
@@ -503,9 +547,183 @@ function renderAdminUsers() {
         <td class="p-2.5 text-emerald-600 font-bold">₦${Number(u.balance || 0).toLocaleString()}</td>
         <td class="p-2.5 text-slate-900 font-black">₦${totalInvested.toLocaleString()}</td>
         <td class="p-2.5 text-slate-500 text-[10px]">${bankInfo}</td>
+        <td class="p-2.5">
+          <button onclick="toggleUserSuspension('${u.email}', ${!isSuspended})" class="px-2.5 py-1 rounded-lg text-[10px] font-bold transition shadow ${isSuspended ? 'bg-emerald-600 text-white hover:bg-emerald-500' : 'bg-rose-600 text-white hover:bg-rose-500'}">
+            ${isSuspended ? 'Unsuspend' : 'Suspend'}
+          </button>
+        </td>
       </tr>
     `;
   }).join('');
+}
+
+async function toggleUserSuspension(targetEmail, suspendState) {
+  if (!currentUser || !isAdminUser(currentUser.email)) { alert('Unauthorized.'); return; }
+  
+  await supabaseClient.from('profiles').update({ is_suspended: suspendState }).eq('email', targetEmail.toLowerCase());
+  await fetchGlobalData();
+  render();
+  alert(`User ${targetEmail} has been ${suspendState ? 'suspended' : 'unsuspended'}.`);
+}
+
+async function triggerLuckySpin() {
+  if (state.isSpinning) return;
+  if (state.user.spinsCount <= 0) {
+    alert('You have no free spins remaining. Invite downlines or upgrade to VIP 3+ to earn spins!');
+    return;
+  }
+
+  state.isSpinning = true;
+  state.user.spinsCountUsed = (state.user.spinsCountUsed || 0) + 1;
+  state.user.spinsCount -= 1;
+
+  // Weighted outcome: ₦1,000 is rare (2% chance)
+  const rand = Math.random() * 100;
+  let rewardAmount = 50;
+  let degrees = 315; // ₦50 sector
+
+  if (rand < 2) {
+    rewardAmount = 1000;
+    degrees = 45; // ₦1,000 sector
+  } else if (rand < 25) {
+    rewardAmount = 500;
+    degrees = 135; // ₦500 sector
+  } else if (rand < 60) {
+    rewardAmount = 200;
+    degrees = 225; // ₦200 sector
+  } else {
+    rewardAmount = 50;
+    degrees = 315; // ₦50 sector
+  }
+
+  const totalRotation = 1440 + degrees; // 4 full rotations + angle
+  const wheelEl = document.getElementById('spinWheel');
+  wheelEl.style.transform = `rotate(${totalRotation}deg)`;
+
+  setTimeout(async () => {
+    state.user.balance += rewardAmount;
+    await saveUserProfile();
+    await supabaseClient.from('transactions').insert([{
+      user_email: currentUser.email.toLowerCase(),
+      type: 'Lucky Spin Reward',
+      amount: rewardAmount,
+      fee: 0,
+      status: 'Completed'
+    }]);
+
+    alert(`🎉 Congratulations! You won ₦${rewardAmount.toLocaleString()} from the Lucky Spin!`);
+    wheelEl.style.transition = 'none';
+    wheelEl.style.transform = `rotate(${degrees}deg)`;
+    setTimeout(() => { wheelEl.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.35, 1.05)'; }, 50);
+
+    state.isSpinning = false;
+    render();
+  }, 4000);
+}
+
+async function claimDailyCheckin() {
+  if (state.user.isSuspended) {
+    openModal('suspendedModal');
+    return;
+  }
+
+  const today = new Date().toDateString();
+  const bonus = state.platformSettings.checkinBonus;
+  state.user.balance += bonus;
+  state.user.lastCheckin = today;
+  await saveUserProfile();
+  await supabaseClient.from('transactions').insert([{ user_email: currentUser.email.toLowerCase(), type: 'Daily Reward', amount: bonus, fee: 0, status: 'Completed' }]);
+  render();
+  alert(`Success! ₦${bonus} added.`);
+}
+
+function openWithdrawModal() {
+  if (state.user.isSuspended) {
+    openModal('suspendedModal');
+    return;
+  }
+
+  if (!state.user.bankAccount) { alert('Bind bank account first.'); switchTab('my'); return; }
+  openModal('withdrawModal');
+}
+
+async function submitWithdrawal() {
+  if (state.user.isSuspended) {
+    closeModal('withdrawModal');
+    openModal('suspendedModal');
+    return;
+  }
+
+  const amount = parseFloat(document.getElementById('withdrawAmount').value);
+  if (!amount || amount < 1000) { alert('Minimum withdrawal is ₦1,000.'); return; }
+  if (state.user.balance < amount) { alert('Insufficient balance.'); return; }
+
+  state.user.balance -= amount;
+  await saveUserProfile();
+  await supabaseClient.from('transactions').insert([{ user_email: currentUser.email.toLowerCase(), type: 'Withdrawal', amount, fee: amount * 0.15, status: 'Pending' }]);
+  closeModal('withdrawModal');
+  render();
+  alert('Withdrawal request submitted.');
+}
+
+async function adminManualCredit() {
+  if (!currentUser || !isAdminUser(currentUser.email)) { alert('Unauthorized access.'); return; }
+
+  const targetEmail = document.getElementById('adminCreditEmail').value.trim().toLowerCase();
+  const creditAmount = parseFloat(document.getElementById('adminCreditAmount').value);
+
+  if (!targetEmail || !creditAmount || creditAmount <= 0) {
+    alert('Please provide a valid user email and credit amount.');
+    return;
+  }
+
+  const { data: targetProf } = await supabaseClient.from('profiles').select('*').eq('email', targetEmail).maybeSingle();
+  if (targetProf) {
+    const newBal = Number(targetProf.balance || 0) + creditAmount;
+    await supabaseClient.from('profiles').update({ balance: newBal }).eq('email', targetEmail);
+  }
+
+  await supabaseClient.from('transactions').insert([{
+    user_email: targetEmail,
+    type: 'Admin Manual Credit',
+    amount: creditAmount,
+    fee: 0,
+    status: 'Completed'
+  }]);
+
+  document.getElementById('adminCreditEmail').value = '';
+  document.getElementById('adminCreditAmount').value = '';
+  await fetchGlobalData();
+  render();
+  alert(`Successfully added ₦${creditAmount.toLocaleString()} to ${targetEmail}!`);
+}
+
+async function adminSetExactBalance() {
+  if (!currentUser || !isAdminUser(currentUser.email)) { alert('Unauthorized access.'); return; }
+
+  const targetEmail = document.getElementById('adminCreditEmail').value.trim().toLowerCase();
+  const exactAmount = parseFloat(document.getElementById('adminCreditAmount').value);
+
+  if (!targetEmail || isNaN(exactAmount) || exactAmount < 0) {
+    alert('Please provide a valid user email and set amount.');
+    return;
+  }
+
+  await supabaseClient.from('profiles').update({ balance: exactAmount }).eq('email', targetEmail);
+
+  await supabaseClient.from('transactions').insert([{
+    user_email: targetEmail,
+    type: 'Admin Balance Adjustment',
+    amount: exactAmount,
+    fee: 0,
+    status: 'Completed'
+  }]);
+
+  document.getElementById('adminCreditEmail').value = '';
+  document.getElementById('adminCreditAmount').value = '';
+  await fetchGlobalData();
+  render();
+  alert(`Successfully set ${targetEmail}'s exact balance to ₦${exactAmount.toLocaleString()}!`);
 }
 
 async function saveBankBinding() {
@@ -541,59 +759,8 @@ async function savePlatformSettings() {
   alert('Global platform settings saved successfully!');
 }
 
-async function claimDailyCheckin() {
-  const today = new Date().toDateString();
-  const bonus = state.platformSettings.checkinBonus;
-  state.user.balance += bonus;
-  state.user.lastCheckin = today;
-  await saveUserProfile();
-  await supabaseClient.from('transactions').insert([{ user_email: currentUser.email.toLowerCase(), type: 'Daily Reward', amount: bonus, fee: 0, status: 'Completed' }]);
-  render();
-  alert(`Success! ₦${bonus} added.`);
-}
-
-async function adminManualCredit() {
-  if (!currentUser || !isAdminUser(currentUser.email)) {
-    alert('Unauthorized access.');
-    return;
-  }
-
-  const targetEmail = document.getElementById('adminCreditEmail').value.trim().toLowerCase();
-  const creditAmount = parseFloat(document.getElementById('adminCreditAmount').value);
-
-  if (!targetEmail || !creditAmount || creditAmount <= 0) {
-    alert('Please provide a valid user email and credit amount.');
-    return;
-  }
-
-  const { data: targetProf } = await supabaseClient.from('profiles').select('*').eq('email', targetEmail).maybeSingle();
-  if (targetProf) {
-    const newBal = Number(targetProf.balance || 0) + creditAmount;
-    await supabaseClient.from('profiles').update({ balance: newBal }).eq('email', targetEmail);
-  } else {
-    await supabaseClient.from('profiles').insert([{ id: 'usr_' + Date.now(), email: targetEmail, balance: 1000 + creditAmount }]);
-  }
-
-  await supabaseClient.from('transactions').insert([{
-    user_email: targetEmail,
-    type: 'Admin Manual Credit',
-    amount: creditAmount,
-    fee: 0,
-    status: 'Completed'
-  }]);
-
-  document.getElementById('adminCreditEmail').value = '';
-  document.getElementById('adminCreditAmount').value = '';
-  await fetchGlobalData();
-  render();
-  alert(`Successfully credited ₦${creditAmount.toLocaleString()} to ${targetEmail}!`);
-}
-
 async function createGiftCode() {
-  if (!currentUser || !isAdminUser(currentUser.email)) {
-    alert('Unauthorized access.');
-    return;
-  }
+  if (!currentUser || !isAdminUser(currentUser.email)) { alert('Unauthorized access.'); return; }
 
   const code = document.getElementById('adminCodeName').value.trim().toUpperCase();
   const amount = parseFloat(document.getElementById('adminCodeAmount').value);
@@ -611,10 +778,7 @@ async function createGiftCode() {
     remaining_qty: qty
   }]);
 
-  if (error) {
-    alert('Error creating gift code: ' + error.message);
-    return;
-  }
+  if (error) { alert('Error creating gift code: ' + error.message); return; }
 
   document.getElementById('adminCodeName').value = '';
   document.getElementById('adminCodeAmount').value = '';
@@ -626,26 +790,13 @@ async function createGiftCode() {
 
 async function redeemGiftCode() {
   const inputCode = document.getElementById('giftCodeInput').value.trim().toUpperCase();
-  if (!inputCode) {
-    alert('Please enter a gift code.');
-    return;
-  }
+  if (!inputCode) { alert('Please enter a gift code.'); return; }
 
-  if (state.user.redeemedCodes.includes(inputCode)) {
-    alert('You have already redeemed this gift code.');
-    return;
-  }
+  if (state.user.redeemedCodes.includes(inputCode)) { alert('You have already redeemed this gift code.'); return; }
 
   const { data: giftObj } = await supabaseClient.from('gift_codes').select('*').eq('code', inputCode).maybeSingle();
-  if (!giftObj) {
-    alert('Invalid gift code.');
-    return;
-  }
-
-  if (giftObj.remaining_qty <= 0) {
-    alert('This gift code has reached its maximum redemptions.');
-    return;
-  }
+  if (!giftObj) { alert('Invalid gift code.'); return; }
+  if (giftObj.remaining_qty <= 0) { alert('This gift code has reached its maximum redemptions.'); return; }
 
   await supabaseClient.from('gift_codes').update({ remaining_qty: giftObj.remaining_qty - 1 }).eq('code', inputCode);
 
@@ -698,22 +849,6 @@ async function submitDeposit() {
   closeModal('depositModal');
   render();
   alert('Deposit submitted for review.');
-}
-
-function openWithdrawModal() {
-  if (!state.user.bankAccount) { alert('Bind bank account first.'); switchTab('my'); return; }
-  openModal('withdrawModal');
-}
-
-async function submitWithdrawal() {
-  const amount = parseFloat(document.getElementById('withdrawAmount').value);
-  if (!amount || amount < 1000) { alert('Minimum withdrawal is ₦1,000.'); return; }
-  state.user.balance -= amount;
-  await saveUserProfile();
-  await supabaseClient.from('transactions').insert([{ user_email: currentUser.email.toLowerCase(), type: 'Withdrawal', amount, fee: amount * 0.15, status: 'Pending' }]);
-  closeModal('withdrawModal');
-  render();
-  alert('Withdrawal request submitted.');
 }
 
 async function processAdminTx(txId, action) {
