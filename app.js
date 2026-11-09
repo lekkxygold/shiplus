@@ -36,7 +36,7 @@ const VIP_PACKAGES = [
 
 let currentUser = null;
 let state = {
-  user: { id: null, email: '', balance: 1000, lastCheckin: null, purchases: {}, redeemedCodes: [], inviter: null, bankAccount: null, isSuspended: false, spinsCount: 0 },
+  user: { id: null, email: '', balance: 1000, lastCheckin: null, purchases: {}, redeemedCodes: [], inviter: null, bankAccount: null, isSuspended: false, spinsCount: 0, spinsCountUsed: 0 },
   transactions: [],
   activeInvestments: [],
   allInvestments: [],
@@ -57,14 +57,14 @@ async function loadUserData(email) {
     const newProfile = { 
       id: 'usr_' + Date.now(), 
       email: cleanEmail, 
-      balance: 1000, // Explicit fixed numerical balance 1000
+      balance: 1000,
       inviter: null, 
       bank_account: null, 
       purchases: {}, 
       redeemed_codes: [], 
       last_checkin: null,
       is_suspended: false,
-      spins_count: 0
+      spins_used: 0
     };
     await supabaseClient.from('profiles').upsert([newProfile]);
     profile = newProfile;
@@ -80,7 +80,7 @@ async function loadUserData(email) {
     redeemedCodes: profile.redeemed_codes || [],
     lastCheckin: profile.last_checkin || null,
     isSuspended: profile.is_suspended || false,
-    spinsCount: Number(profile.spins_count || 0)
+    spinsCountUsed: Number(profile.spins_used || 0)
   };
 
   const { data: invs } = await supabaseClient.from('active_investments').select('*').eq('user_email', cleanEmail);
@@ -119,27 +119,28 @@ async function computeTeamLevels(userEmail) {
 function computeAvailableSpins() {
   if (!currentUser) return;
   
-  // 1 spin per active invite downline who has invested
-  const activeLevel1Invites = (state.teamLevels[1] || []).filter(u => {
+  // Rule: 1 free spin per VALID referral downline (Level 1 invitees who have active investments)
+  const validInvitesCount = (state.teamLevels[1] || []).filter(u => {
     return state.allInvestments.some(inv => inv.user_email.toLowerCase() === u.email.toLowerCase());
   }).length;
 
-  // 1 spin for purchasing VIP 3 or higher
-  let vip3BonusSpins = 0;
+  // Rule: 1 free spin if user invests in VIP 3 or higher
+  let vip3PlusBonusSpins = 0;
   if (state.user.purchases) {
     Object.keys(state.user.purchases).forEach(pkgId => {
       if (Number(pkgId) >= 3 && state.user.purchases[pkgId] > 0) {
-        vip3BonusSpins += Number(state.user.purchases[pkgId]);
+        vip3PlusBonusSpins += Number(state.user.purchases[pkgId]);
       }
     });
   }
 
-  const earnedSpins = activeLevel1Invites + vip3BonusSpins;
-  state.user.spinsCount = Math.max(0, earnedSpins - (state.user.spinsCountUsed || 0));
+  const totalEarnedSpins = validInvitesCount + vip3PlusBonusSpins;
+  state.user.spinsCount = Math.max(0, totalEarnedSpins - state.user.spinsCountUsed);
 }
 
 async function saveUserProfile() {
   if (!supabaseClient || !currentUser) return;
+  // Exclude 'spins_count' which was causing the 400 Bad Request. We store 'spins_used' instead.
   await supabaseClient.from('profiles').update({
     balance: state.user.balance,
     inviter: state.user.inviter ? state.user.inviter.trim().toLowerCase() : null,
@@ -148,7 +149,7 @@ async function saveUserProfile() {
     redeemed_codes: state.user.redeemedCodes,
     last_checkin: state.user.lastCheckin,
     is_suspended: state.user.isSuspended,
-    spins_count: state.user.spinsCountUsed || 0
+    spins_used: state.user.spinsCountUsed || 0
   }).eq('email', currentUser.email.toLowerCase());
 }
 
@@ -245,7 +246,7 @@ async function handleRegister(e) {
       redeemed_codes: [],
       last_checkin: null,
       is_suspended: false,
-      spins_count: 0
+      spins_used: 0
     }]);
   }
 
@@ -569,7 +570,7 @@ async function toggleUserSuspension(targetEmail, suspendState) {
 async function triggerLuckySpin() {
   if (state.isSpinning) return;
   if (state.user.spinsCount <= 0) {
-    alert('You have no free spins remaining. Invite downlines or upgrade to VIP 3+ to earn spins!');
+    alert('You have no free spins remaining. Invite valid investing downlines or purchase VIP 3+ packages to unlock spins!');
     return;
   }
 
@@ -577,31 +578,48 @@ async function triggerLuckySpin() {
   state.user.spinsCountUsed = (state.user.spinsCountUsed || 0) + 1;
   state.user.spinsCount -= 1;
 
-  // Weighted outcome: ₦1,000 is rare (2% chance)
+  // 9 segments (each 40 degrees):
+  // 1: ₦50 (0-40), 2: ₦100 (40-80), 3: ₦200 (80-120), 4: ₦300 (120-160), 5: ₦400 (160-200),
+  // 6: ₦500 (200-240), 7: ₦600 (240-280), 8: ₦800 (280-320), 9: ₦1000 (320-360 [Rare 2%])
   const rand = Math.random() * 100;
   let rewardAmount = 50;
-  let degrees = 315; // ₦50 sector
+  let targetAngle = 20;
 
   if (rand < 2) {
     rewardAmount = 1000;
-    degrees = 45; // ₦1,000 sector
-  } else if (rand < 25) {
+    targetAngle = 340; // Segment 9
+  } else if (rand < 10) {
+    rewardAmount = 800;
+    targetAngle = 300; // Segment 8
+  } else if (rand < 22) {
+    rewardAmount = 600;
+    targetAngle = 260; // Segment 7
+  } else if (rand < 38) {
     rewardAmount = 500;
-    degrees = 135; // ₦500 sector
-  } else if (rand < 60) {
+    targetAngle = 220; // Segment 6
+  } else if (rand < 55) {
+    rewardAmount = 400;
+    targetAngle = 180; // Segment 5
+  } else if (rand < 70) {
+    rewardAmount = 300;
+    targetAngle = 140; // Segment 4
+  } else if (rand < 82) {
     rewardAmount = 200;
-    degrees = 225; // ₦200 sector
+    targetAngle = 100; // Segment 3
+  } else if (rand < 92) {
+    rewardAmount = 100;
+    targetAngle = 60; // Segment 2
   } else {
     rewardAmount = 50;
-    degrees = 315; // ₦50 sector
+    targetAngle = 20; // Segment 1
   }
 
-  const totalRotation = 1440 + degrees; // 4 full rotations + angle
+  const totalRotation = 1440 + (360 - targetAngle);
   const wheelEl = document.getElementById('spinWheel');
   wheelEl.style.transform = `rotate(${totalRotation}deg)`;
 
   setTimeout(async () => {
-    state.user.balance += rewardAmount;
+    state.user.balance += Number(rewardAmount);
     await saveUserProfile();
     await supabaseClient.from('transactions').insert([{
       user_email: currentUser.email.toLowerCase(),
@@ -613,7 +631,7 @@ async function triggerLuckySpin() {
 
     alert(`🎉 Congratulations! You won ₦${rewardAmount.toLocaleString()} from the Lucky Spin!`);
     wheelEl.style.transition = 'none';
-    wheelEl.style.transform = `rotate(${degrees}deg)`;
+    wheelEl.style.transform = `rotate(${360 - targetAngle}deg)`;
     setTimeout(() => { wheelEl.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.35, 1.05)'; }, 50);
 
     state.isSpinning = false;
