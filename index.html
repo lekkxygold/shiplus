@@ -34,6 +34,7 @@
   <style>
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .wheel-rotate { transition: transform 4s cubic-bezier(0.15, 0.85, 0.35, 1.05); }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen font-sans pb-28 selection:bg-emerald-500 selection:text-white">
@@ -143,6 +144,49 @@
           </button>
         </div>
 
+        <!-- LUCKY SPIN WHEEL WIDGET -->
+        <div class="bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 text-white rounded-3xl p-5 shadow-lg relative overflow-hidden space-y-4">
+          <div class="flex justify-between items-center">
+            <div>
+              <span class="text-[10px] font-black uppercase tracking-widest text-amber-200 bg-amber-950/30 px-2.5 py-0.5 rounded-full border border-amber-300/30">BONUS WHEEL</span>
+              <h3 class="text-base font-black text-white mt-1">Shiplus Lucky Spin</h3>
+            </div>
+            <div class="bg-amber-950/40 border border-amber-200/40 rounded-2xl px-3 py-1.5 text-center">
+              <div class="text-[9px] font-bold text-amber-200 uppercase">Available Spins</div>
+              <div id="spinCountDisplay" class="text-sm font-black text-amber-300">0</div>
+            </div>
+          </div>
+
+          <!-- WHEEL GRAPHIC -->
+          <div class="relative w-44 h-44 mx-auto flex items-center justify-center">
+            <div id="spinWheel" class="w-44 h-44 rounded-full border-4 border-amber-200 bg-slate-900 relative overflow-hidden shadow-2xl wheel-rotate">
+              <div class="absolute inset-0 flex items-center justify-center">
+                <svg viewBox="0 0 100 100" class="w-full h-full">
+                  <path d="M50 50 L50 0 A50 50 0 0 1 100 50 Z" fill="#10b981" />
+                  <path d="M50 50 L100 50 A50 50 0 0 1 50 100 Z" fill="#f59e0b" />
+                  <path d="M50 50 L50 100 A50 50 0 0 1 0 50 Z" fill="#3b82f6" />
+                  <path d="M50 50 L0 50 A50 50 0 0 1 50 0 Z" fill="#ef4444" />
+                </svg>
+              </div>
+              <div class="absolute inset-0 flex items-center justify-center text-[10px] font-black text-white pointer-events-none">
+                <span class="absolute top-4 text-amber-200 font-bold">₦1,000</span>
+                <span class="absolute right-4 text-emerald-200 font-bold">₦500</span>
+                <span class="absolute bottom-4 text-blue-200 font-bold">₦200</span>
+                <span class="absolute left-4 text-rose-200 font-bold">₦50</span>
+              </div>
+            </div>
+            <!-- POINTER NEEDLE -->
+            <div class="absolute -top-2 w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[18px] border-t-amber-100 drop-shadow-md z-10"></div>
+            <button onclick="triggerLuckySpin()" id="spinActionBtn" class="absolute z-20 w-12 h-12 rounded-full bg-white text-slate-900 font-black text-xs shadow-xl border-2 border-amber-300 active:scale-95 transition flex items-center justify-center">
+              SPIN
+            </button>
+          </div>
+
+          <p class="text-[10px] text-amber-100 text-center leading-relaxed">
+            Get 1 spin for every active invite downline or buying VIP 3+. Win <strong>₦50 - ₦1,000</strong>!
+          </p>
+        </div>
+
         <!-- 4 QUICK ACTION BUTTONS GRID -->
         <div class="grid grid-cols-4 gap-2.5">
           <button onclick="openModal('depositModal')" class="bg-white border border-slate-100 hover:border-emerald-200 p-3 rounded-2xl shadow-sm flex flex-col items-center justify-center transition group">
@@ -215,7 +259,7 @@
             <h2 class="text-base font-black text-slate-900">VIP Shiplus Fast Charging Packages</h2>
           </div>
           <div class="bg-emerald-50 border border-emerald-200/80 rounded-xl px-3 py-2 text-xs font-bold text-emerald-800 flex justify-between items-center">
-            <span>12 Active Plans (40 Days Duration)</span>
+            <span>10 Active Plans (40 Days Duration)</span>
             <span class="text-[10px] font-normal text-emerald-600">Auto-Yield 24H</span>
           </div>
         </div>
@@ -391,7 +435,7 @@
         <!-- USER PROFILES TABLE WITH SEARCH BAR -->
         <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm space-y-3">
           <div class="flex justify-between items-center gap-2">
-            <h3 class="text-xs font-black text-slate-900">User Profiles</h3>
+            <h3 class="text-xs font-black text-slate-900">User Profiles Management</h3>
             <input type="text" id="adminUserSearch" oninput="renderAdminUsers()" placeholder="Search member email..." class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs w-44 focus:outline-none focus:border-emerald-500" />
           </div>
           <div class="overflow-x-auto">
@@ -402,6 +446,7 @@
                   <th class="p-2.5">Balance</th>
                   <th class="p-2.5">Total Invested</th>
                   <th class="p-2.5">Bound Bank</th>
+                  <th class="p-2.5">Status / Actions</th>
                 </tr>
               </thead>
               <tbody id="adminUsersTable" class="divide-y divide-slate-100"></tbody>
@@ -409,13 +454,17 @@
           </div>
         </div>
 
+        <!-- MANUAL BALANCE CREDIT / SET EXACT BALANCE -->
         <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm space-y-3">
-          <h3 class="text-xs font-black text-slate-900">Manual User Crediting</h3>
+          <h3 class="text-xs font-black text-slate-900">Manual Balance Control</h3>
           <div class="grid grid-cols-2 gap-2">
-            <input type="email" id="adminCreditEmail" placeholder="user@example.com" class="bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs" />
-            <input type="number" id="adminCreditAmount" placeholder="Amount ₦" class="bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs" />
+            <input type="email" id="adminCreditEmail" placeholder="user@example.com" class="bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs col-span-2 sm:col-span-1" />
+            <input type="number" id="adminCreditAmount" placeholder="Amount ₦" class="bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs col-span-2 sm:col-span-1" />
           </div>
-          <button onclick="adminManualCredit()" class="w-full bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs">Credit User</button>
+          <div class="flex gap-2">
+            <button onclick="adminManualCredit()" class="flex-1 bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs shadow">Add (+₦ Credit)</button>
+            <button onclick="adminSetExactBalance()" class="flex-1 bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs shadow">Set Exact Balance</button>
+          </div>
         </div>
 
         <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm space-y-3">
@@ -486,6 +535,17 @@
       <p class="text-xs text-slate-500">You have received a <strong class="text-emerald-600">₦1,000 Sign-up Bonus</strong>.</p>
       <a href="https://t.me/+5cxZNXcGRmo5NWJk" target="_blank" onclick="closeModal('welcomeModal')" class="block w-full bg-emerald-600 text-white font-bold py-3 rounded-xl text-xs">Join Telegram Group</a>
       <button onclick="closeModal('welcomeModal')" class="block w-full bg-slate-100 text-slate-600 font-bold py-2.5 rounded-xl text-xs">Continue</button>
+    </div>
+  </div>
+
+  <!-- SUSPENDED USER WARNING MODAL -->
+  <div id="suspendedModal" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-xl space-y-4">
+      <div class="w-14 h-14 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto text-2xl font-black shadow-lg shadow-rose-500/10">🚫</div>
+      <h3 class="text-lg font-black text-slate-900">Account Suspended</h3>
+      <p class="text-xs text-slate-500 leading-relaxed">Your account has been restricted by administrators. You cannot perform check-ins or request payouts at this time.</p>
+      <a href="https://t.me/shiplusfastchargingcustomersuppo" target="_blank" class="block w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 rounded-xl text-xs shadow">Contact Customer Support</a>
+      <button onclick="closeModal('suspendedModal')" class="block w-full bg-slate-100 text-slate-600 font-bold py-2.5 rounded-xl text-xs">Close Window</button>
     </div>
   </div>
 
