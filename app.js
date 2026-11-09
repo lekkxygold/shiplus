@@ -566,6 +566,7 @@ async function toggleUserSuspension(targetEmail, suspendState) {
 
 async function triggerLuckySpin() {
   if (state.isSpinning) return;
+  computeAvailableSpins();
   if (state.user.spinsCount <= 0) {
     alert('You have no free spins remaining. Spins require a valid referral who has invested, or an investment in VIP 3 or higher!');
     return;
@@ -626,7 +627,7 @@ async function triggerLuckySpin() {
     alert(`🎉 Congratulations! You won ₦${rewardAmount.toLocaleString()} from the Lucky Spin!`);
     wheelEl.style.transition = 'none';
     wheelEl.style.transform = `rotate(${360 - targetAngle}deg)`;
-    setTimeout(() => { wheelEl.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.35, 1.05)'; }, 50);
+    setTimeout(() => { wheelEl.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.35, 1.05);'; }, 50);
 
     state.isSpinning = false;
     render();
@@ -833,11 +834,13 @@ async function redeemGiftCode() {
 async function buyVipPackage(pkgId) {
   const pkg = VIP_PACKAGES.find(p => p.id === pkgId);
   if (state.user.balance < pkg.price) { alert('Insufficient balance.'); return; }
+  
   state.user.balance -= pkg.price;
   if (!state.user.purchases) state.user.purchases = {};
   state.user.purchases[pkgId] = (state.user.purchases[pkgId] || 0) + 1;
   await saveUserProfile();
 
+  // Record active investment
   await supabaseClient.from('active_investments').insert([{
     user_email: currentUser.email.toLowerCase(),
     pkg_name: pkg.name,
@@ -847,10 +850,56 @@ async function buyVipPackage(pkgId) {
     days_claimed: 0,
     last_claim_timestamp: Date.now()
   }]);
-  await supabaseClient.from('transactions').insert([{ user_email: currentUser.email.toLowerCase(), type: `Invest: ${pkg.name}`, amount: pkg.price, fee: 0, status: 'Completed' }]);
+
+  await supabaseClient.from('transactions').insert([{ 
+    user_email: currentUser.email.toLowerCase(), 
+    type: `Invest: ${pkg.name}`, 
+    amount: pkg.price, 
+    fee: 0, 
+    status: 'Completed' 
+  }]);
+
+  // ========================================================
+  // MULTI-LEVEL REFERRAL COMMISSION DISTRIBUTION (L1-L4)
+  // L1: 25%, L2: 2%, L3: 1%, L4: 1% of Package Price
+  // ========================================================
+  if (state.user.inviter) {
+    let currentInviterEmail = state.user.inviter.trim().toLowerCase();
+    const commissionRates = [0.25, 0.02, 0.01, 0.01]; // L1 to L4 rates
+
+    for (let level = 0; level < 4; level++) {
+      if (!currentInviterEmail) break;
+
+      // Find inviter profile in database
+      const { data: uplineProfile } = await supabaseClient.from('profiles').select('*').eq('email', currentInviterEmail).maybeSingle();
+      
+      if (uplineProfile) {
+        const commAmount = pkg.price * commissionRates[level];
+        const newUplineBalance = Number(uplineProfile.balance || 0) + commAmount;
+
+        // Update upline balance
+        await supabaseClient.from('profiles').update({ balance: newUplineBalance }).eq('email', currentInviterEmail);
+
+        // Record transaction for upline
+        await supabaseClient.from('transactions').insert([{
+          user_email: currentInviterEmail,
+          type: `Referral Commission (L${level + 1} from ${currentUser.email})`,
+          amount: commAmount,
+          fee: 0,
+          status: 'Completed'
+        }]);
+
+        // Move up to the next level's inviter
+        currentInviterEmail = uplineProfile.inviter ? uplineProfile.inviter.trim().toLowerCase() : null;
+      } else {
+        break;
+      }
+    }
+  }
+
   await loadUserData(currentUser.email);
   render();
-  alert(`Successfully invested in ${pkg.name}!`);
+  alert(`Successfully invested in ${pkg.name}! Referral commissions have been credited to your team uplines.`);
 }
 
 async function submitDeposit() {
