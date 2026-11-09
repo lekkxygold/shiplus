@@ -144,57 +144,71 @@
           </button>
         </div>
 
-        <!-- LUCKY SPIN WHEEL WIDGET (9 DIVIDED SECTORS) -->
-        <div class="bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 text-white rounded-3xl p-5 shadow-lg relative overflow-hidden space-y-4">
-          <div class="flex justify-between items-center">
-            <div>
-              <span class="text-[10px] font-black uppercase tracking-widest text-amber-200 bg-amber-950/30 px-2.5 py-0.5 rounded-full border border-amber-300/30">BONUS WHEEL</span>
-              <h3 class="text-base font-black text-white mt-1">Shiplus Lucky Spin</h3>
+        <!-- MODERN LUCKY SPIN WIDGET -->
+        <div class="relative bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950 text-white rounded-3xl p-6 shadow-2xl border border-emerald-500/20 overflow-hidden space-y-5">
+          <div class="absolute -top-12 -right-12 w-36 h-36 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute -bottom-12 -left-12 w-36 h-36 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div class="flex justify-between items-start relative z-10">
+            <div class="space-y-1">
+              <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase tracking-wider">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Exclusive Reward Wheel
+              </div>
+              <h3 class="text-lg font-black tracking-tight text-white">Shiplus Lucky Spin</h3>
             </div>
-            <div class="bg-amber-950/40 border border-amber-200/40 rounded-2xl px-3 py-1.5 text-center">
-              <div class="text-[9px] font-bold text-amber-200 uppercase">Available Spins</div>
-              <div id="spinCountDisplay" class="text-sm font-black text-amber-300">0</div>
+            
+            <div class="bg-slate-800/80 border border-slate-700/80 backdrop-blur-md rounded-2xl px-3.5 py-2 text-center shadow-inner">
+              <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Spins Available</div>
+              <div id="spinCountDisplay" class="text-base font-black text-emerald-400">0</div>
             </div>
           </div>
 
-          <!-- 9-SEGMENT WHEEL GRAPHIC -->
-          <div class="relative w-48 h-48 mx-auto flex items-center justify-center">
-            <div id="spinWheel" class="w-48 h-48 rounded-full border-4 border-amber-200 bg-slate-900 relative overflow-hidden shadow-2xl wheel-rotate">
+          <!-- 9-Segment Modern Wheel Graphic Container -->
+          <div class="relative w-52 h-52 mx-auto flex items-center justify-center my-2">
+            <div class="absolute inset-0 rounded-full border-2 border-emerald-500/30 animate-pulse pointer-events-none"></div>
+            
+            <div id="spinWheel" class="w-48 h-48 rounded-full border-4 border-amber-400/80 bg-slate-950 relative overflow-hidden shadow-2xl wheel-rotate">
               <svg viewBox="0 0 100 100" class="w-full h-full">
-                <!-- 9 Segments (360 / 9 = 40 deg each) -->
-                <path d="M50 50 L50 0 A50 50 0 0 1 75.0 6.7 Z" fill="#10b981" /> <!-- ₦50 -->
-                <path d="M50 50 L75.0 6.7 A50 50 0 0 1 96.9 34.7 Z" fill="#f59e0b" /> <!-- ₦100 -->
-                <path d="M50 50 L96.9 34.7 A50 50 0 0 1 96.9 65.3 Z" fill="#3b82f6" /> <!-- ₦200 -->
-                <path d="M50 50 L96.9 65.3 A50 50 0 0 1 75.0 93.3 Z" fill="#8b5cf6" /> <!-- ₦300 -->
-                <path d="M50 50 L75.0 93.3 A50 50 0 0 1 50 100 Z" fill="#ec4899" /> <!-- ₦400 -->
-                <path d="M50 50 L50 100 A50 50 0 0 1 25.0 93.3 Z" fill="#06b6d4" /> <!-- ₦500 -->
-                <path d="M50 50 L25.0 93.3 A50 50 0 0 1 3.1 65.3 Z" fill="#84cc16" /> <!-- ₦600 -->
-                <path d="M50 50 L3.1 65.3 A50 50 0 0 1 3.1 34.7 Z" fill="#f97316" /> <!-- ₦800 -->
-                <path d="M50 50 L3.1 34.7 A50 50 0 0 1 50 0 Z" fill="#ef4444" /> <!-- ₦1000 -->
+                <path d="M50 50 L50 0 A50 50 0 0 1 75.0 6.7 Z" fill="#059669" />
+                <path d="M50 50 L75.0 6.7 A50 50 0 0 1 96.9 34.7 Z" fill="#d97706" />
+                <path d="M50 50 L96.9 34.7 A50 50 0 0 1 96.9 65.3 Z" fill="#2563eb" />
+                <path d="M50 50 L96.9 65.3 A50 50 0 0 1 75.0 93.3 Z" fill="#7c3aed" />
+                <path d="M50 50 L75.0 93.3 A50 50 0 0 1 50 100 Z" fill="#db2777" />
+                <path d="M50 50 L50 100 A50 50 0 0 1 25.0 93.3 Z" fill="#0891b2" />
+                <path d="M50 50 L25.0 93.3 A50 50 0 0 1 3.1 65.3 Z" fill="#65a30d" />
+                <path d="M50 50 L3.1 65.3 A50 50 0 0 1 3.1 34.7 Z" fill="#ea580c" />
+                <path d="M50 50 L3.1 34.7 A50 50 0 0 1 50 0 Z" fill="#dc2626" />
               </svg>
-              <!-- Labels on Segments -->
+              
               <div class="absolute inset-0 flex items-center justify-center text-[9px] font-black text-white pointer-events-none">
-                <span class="absolute top-2 text-white">₦50</span>
-                <span class="absolute top-5 right-6 text-white">₦100</span>
-                <span class="absolute right-3 top-16 text-white">₦200</span>
-                <span class="absolute right-6 bottom-5 text-white">₦300</span>
-                <span class="absolute bottom-2 text-white">₦400</span>
-                <span class="absolute bottom-5 left-6 text-white">₦500</span>
-                <span class="absolute left-3 top-16 text-white">₦600</span>
-                <span class="absolute left-6 top-5 text-white">₦800</span>
-                <span class="absolute top-10 left-20 text-amber-200 font-extrabold text-[10px]">₦1k</span>
+                <span class="absolute top-2.5 text-slate-100">₦50</span>
+                <span class="absolute top-5 right-6 text-slate-100">₦100</span>
+                <span class="absolute right-3.5 top-16 text-slate-100">₦200</span>
+                <span class="absolute right-6 bottom-5 text-slate-100">₦300</span>
+                <span class="absolute bottom-2.5 text-slate-100">₦400</span>
+                <span class="absolute bottom-5 left-6 text-slate-100">₦500</span>
+                <span class="absolute left-3.5 top-16 text-slate-100">₦600</span>
+                <span class="absolute left-6 top-5 text-slate-100">₦800</span>
+                <span class="absolute top-10 left-20 text-amber-300 font-extrabold text-[10px] drop-shadow">₦1k</span>
               </div>
             </div>
-            <!-- POINTER NEEDLE -->
-            <div class="absolute -top-2 w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[18px] border-t-amber-100 drop-shadow-md z-10"></div>
-            <button onclick="triggerLuckySpin()" id="spinActionBtn" class="absolute z-20 w-12 h-12 rounded-full bg-white text-slate-900 font-black text-xs shadow-xl border-2 border-amber-300 active:scale-95 transition flex items-center justify-center">
+
+            <div class="absolute -top-1 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[16px] border-t-amber-400 drop-shadow-lg z-20"></div>
+
+            <button onclick="triggerLuckySpin()" id="spinActionBtn" class="absolute z-30 w-14 h-14 rounded-full bg-gradient-to-tr from-emerald-500 to-green-400 text-slate-950 font-black text-xs shadow-xl border-4 border-slate-900 active:scale-95 hover:scale-105 transition flex items-center justify-center tracking-wider">
               SPIN
             </button>
           </div>
 
-          <p class="text-[10px] text-amber-100 text-center leading-relaxed">
-            1 spin per valid investing downline OR when you invest in VIP 3+. (₦50 - ₦1,000 range)
-          </p>
+          <div class="bg-slate-800/50 border border-slate-700/60 rounded-2xl p-3 space-y-2 relative z-10">
+            <div class="text-[10px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+              <i data-lucide="info" class="w-3.5 h-3.5"></i> How to Unlock Free Spins:
+            </div>
+            <ul class="text-[11px] text-slate-300 space-y-1 font-medium">
+              <li class="flex items-center gap-1.5">• <strong>1 Free Spin</strong> per valid downline who has invested.</li>
+              <li class="flex items-center gap-1.5">• <strong>1 Free Spin</strong> automatically when investing in <strong>VIP 3+</strong>.</li>
+            </ul>
+          </div>
         </div>
 
         <!-- 4 QUICK ACTION BUTTONS GRID -->
